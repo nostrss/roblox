@@ -1,5 +1,5 @@
 --!strict
--- 업로드한 부재 메시(MemberMeshes 태그 Folder 안의 MeshPart)를 복제해 하층 공포를 조립한다.
+-- 업로드한 부재 메시(MemberMeshes 태그 Folder 안의 MeshPart)를 복제해 하층 공포 46구를 조립한다.
 -- 메시 원본은 tools/gongpo_obj.luau 가 Gongpo 데이터로 구운 OBJ. 크기·위치는 여기서 데이터로 다시 정한다.
 -- Edit 모드 명령창에서 require(game.ServerScriptService.Server.Gongpo)() 로 미리 지어 저장하면 실행 시엔 건너뛴다.
 local CollectionService = game:GetService("CollectionService")
@@ -66,6 +66,65 @@ local function build(meshes: Instance, kind: string, origin: CFrame, parent: Ins
 	model.Parent = parent
 end
 
+local GWIHANDAE_THICKNESS = 0.151 -- S3 p.283 귀한대 초제공 151×224
+
+-- 귀포 한 세트. origin: 모서리 주두 밑면 중심, LookVector = 대각선 바깥. outA·outB = 두 면의 바깥 방향
+local function buildCorner(meshes: Instance, origin: CFrame, outA: Vector3, outB: Vector3, parent: Instance)
+	local function mesh(name: string): MeshPart
+		local m = meshes:FindFirstChild(name)
+		assert(m and m:IsA("MeshPart"), `MemberMeshes에 {name} MeshPart가 없다`)
+		return m
+	end
+	local C = G.gwipo
+	local model = Instance.new("Model")
+	model.Name = "gwi"
+	local t = G.thickness
+	local J, S = G.judu, G.soro
+	place(model, mesh("Judu"), origin, CFrame.identity, Vector3.new(0, J.height / 2, 0), Vector3.new(J.top, J.height, J.top))
+
+	-- 제공형 부재: frame(바깥 = LookVector) 위에 u(바깥 +)·v 상자로 놓는다
+	local function jegongAt(name: string, frame: CFrame, u0: number, u1: number, v0: number, v1: number, thick: number)
+		local center, size = Vector3.new((u0 + u1) / 2, (v0 + v1) / 2, 0), Vector3.new(u1 - u0, v1 - v0, thick)
+		place(model, mesh(name), frame, CFrame.Angles(0, math.pi / 2, 0), center, size)
+	end
+	local soros: { Vector3 } = {}
+	local function soro(frame: CFrame, x: number, y: number, z: number)
+		local p = (frame * CFrame.new(s(x), s(y), s(z))).Position
+		for _, q in soros do
+			if (p - q).Magnitude < s(0.05) then
+				return -- 두 면 첨차 끝이 겹치는 자리엔 하나만
+			end
+		end
+		table.insert(soros, p)
+		place(model, mesh("Soro"), CFrame.new(p) * (origin - origin.Position), CFrame.identity, Vector3.new(0, S.height / 2, 0), Vector3.new(S.top, S.height, S.top))
+	end
+
+	for _, pair in { { outA, outB }, { outB, outA } } do
+		local frame = CFrame.lookAt(origin.Position, origin.Position + pair[1])
+		local d = frame.RightVector:Dot(pair[2]) -- 다른 면 바깥 쪽이 로컬 X의 어느 부호인지
+		for _, name in C.jegong do -- 좌·우대
+			local u0, u1, v0, v1 = math.huge, -math.huge, math.huge, -math.huge
+			for _, p in (G.jegong :: any)[name] do
+				u0, u1, v0, v1 = math.min(u0, p[1]), math.max(u1, p[1]), math.min(v0, p[2]), math.max(v1, p[2])
+			end
+			jegongAt(name, frame, u0, u1, v0, v1, t)
+		end
+		for _, row in C.cheomchas do
+			local name, k, c, y0, h, L = row[1] :: string, row[2] :: number, row[3] :: number, row[4] :: number, row[5] :: number, row[6] :: number
+			local z = -k * G.outset
+			place(model, mesh(name), frame, CFrame.new(s(-c * d), s(y0), s(z)), Vector3.new(0, h / 2, 0), Vector3.new(L, h, t))
+			for _, e in { c - (L / 2 - 0.055), c + (L / 2 - 0.055) } do
+				soro(frame, -e * d, y0 + h, z)
+			end
+		end
+	end
+	for _, g in C.gwihandae do
+		jegongAt(g[1] :: string, origin, g[2] :: number, g[3] :: number, g[4] :: number, g[5] :: number, GWIHANDAE_THICKNESS)
+	end
+	model.Parent = parent
+	return #soros
+end
+
 -- 기둥 좌표(주칸 → 중심 기준)
 local function columns(bays: { number }): { number }
 	local total = 0
@@ -117,7 +176,12 @@ return function()
 	face(xs, front, -Vector3.zAxis, function(a: number): Vector3 return Vector3.new(s(a), y, zN) end) -- 북
 	face(zs, side, Vector3.xAxis, function(a: number): Vector3 return Vector3.new(xE, y, s(a)) end) -- 동
 	face(zs, side, -Vector3.xAxis, function(a: number): Vector3 return Vector3.new(xW, y, s(a)) end) -- 서
-	-- S4 011: 하층 주두 46 = 주간포 32 + 주상포 10 + 귀포 4. ponytail: 귀포는 S4 146 평면도로 따로 만든다 (모서리 비어 있음)
-	assert(count.jugan == 32 and count.jusang == 10, `공포 수 주간포 {count.jugan}, 주상포 {count.jusang}`)
+	for _, c in { { xW, zN, -Vector3.xAxis, -Vector3.zAxis }, { xE, zN, Vector3.xAxis, -Vector3.zAxis }, { xE, zS, Vector3.xAxis, Vector3.zAxis }, { xW, zS, -Vector3.xAxis, Vector3.zAxis } } do
+		local p, a, b = Vector3.new(c[1] :: number, y, c[2] :: number), c[3] :: Vector3, c[4] :: Vector3
+		buildCorner(folder, CFrame.lookAt(p, p + (a + b).Unit), a, b, root)
+		count.gwi = (count.gwi or 0) + 1
+	end
+	-- S4 011: 하층 주두 46 = 주간포 32 + 주상포 10 + 귀포 4
+	assert(count.jugan == 32 and count.jusang == 10 and count.gwi == 4, `공포 수 주간포 {count.jugan}, 주상포 {count.jusang}, 귀포 {count.gwi}`)
 	root.Parent = workspace
 end

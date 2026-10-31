@@ -152,6 +152,8 @@ for _, name in names do
 	extrude(add(name), G.jegong[name], G.thickness)
 end
 
+extrude(add("Unggong"), G.unggong, G.thickness)
+
 for _, e in meshes do
 	local lo, hi = { math.huge, math.huge, math.huge }, { -math.huge, -math.huge, -math.huge }
 	for _, v in e.mesh.verts do
