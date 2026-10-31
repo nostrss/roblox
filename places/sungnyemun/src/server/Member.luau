@@ -5,7 +5,10 @@
 -- MeshPart의 CollisionFidelity는 스크립트로 못 바꾼다 → MemberMeshes 원본에 Studio 속성 창에서 Box로 두고 복제본이 물려받는다.
 
 -- 그림자를 끄는 작은 부재 (메시·부재 이름)
-local SMALL = { Soro = true, SoCheomcha = true, DaeCheomcha = true, Buyeon = true, SeonjaBuyeon = true }
+local SMALL = {
+	Soro = true, SoCheomcha = true, DaeCheomcha = true, Buyeon = true, SeonjaBuyeon = true,
+	Chomaegi = true, Imaegi = true, BuyeonGaepan = true, Sungakpan = true,
+}
 
 return function(p: BasePart, color: Color3, collide: boolean?)
 	p.Anchored = true

@@ -2,7 +2,8 @@
 -- 처마의 평연(나란한 서까래)과 부연을 짓는다. 서까래는 단면이 둥근 Part, 부연은 MemberMeshes의 Buyeon 메시.
 -- 서까래 밑면은 안쪽 받침 도리와 외목도리 윗면에 닿고(Chukbu에서 짓는 값), 앙곡만큼 외목도리 닿는 점을 축으로 끝을 들어 올린다.
 -- 모서리: 추녀(밑면을 도리 대각선 교차점에 얹음)·사래(추녀 윗면 휜 구간에 얹음)·갈모산방, 선자연은 부채 중심(안쪽 받침 도리 모서리)에서 처마선으로.
--- 원점 = 문루 중심 지면, 남 = +Z, 동 = +X. ponytail: 개판·초매기는 14번
+-- 마감: 서까래·부연 윗면에 개판, 끝에 초매기·이매기(처마선을 따라 토막으로), 공포 출목 장여 사이에 순각판.
+-- 원점 = 문루 중심 지면, 남 = +Z, 동 = +X.
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +12,7 @@ local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local K = require(ReplicatedStorage.Shared.Chukbu)
 local C = require(ReplicatedStorage.Shared.Cheoma)
+local G = require(ReplicatedStorage.Shared.Gongpo)
 local setup = require(script.Parent.Member)
 
 local S = Units.studs(1)
@@ -64,8 +66,28 @@ local function rotate(p: Vector2, pivot: Vector2, angle: number): Vector2
 	return pivot + Vector2.new(v.X * c - v.Y * sn, v.X * sn + v.Y * c)
 end
 
--- 서까래 하나. 밑면 선이 sIn·sOut(도리 윗면)을 지나고 sOut 밖 overhang 수평거리에서 끝난다. 끝을 rise만큼 들도록 sOut 축으로 돌린 각을 돌려준다
-local function rafter(model: Model, name: string, f: Face, a: number, sIn: Vector2, sOut: Vector2, overhang: number, spec: any, rise: number): number
+-- 처마선 위 점: 초매기·이매기 단면 밑면 가운데(스터드)와 받침 부재 윗면 법선
+type Pt = { p: Vector3, n: Vector3 }
+
+-- 서까래·부연 윗면 선(tailTop → tipTop, 스터드)에 개판을 덮고, maegi가 있으면 끝에서 물린 자리를 처마선 점으로 모은다
+local function cover(model: Model, boardName: string, tailTop: Vector3, tipTop: Vector3, up: Vector3, width: number, maegi: any?, pts: { Pt }?)
+	local w = (tipTop - tailTop).Unit
+	local stop = tipTop
+	if maegi then
+		stop -= w * (maegi.setback + maegi.width) * S
+		table.insert(pts :: { Pt }, { p = tipTop - w * (maegi.setback + maegi.width / 2) * S, n = up })
+	end
+	local p = Instance.new("Part")
+	p.Name = boardName
+	setup(p, WOOD)
+	p.Size = Vector3.new((stop - tailTop).Magnitude, C.gaepan * S, width * S)
+	p.CFrame = CFrame.fromMatrix((tailTop + stop) / 2 + up * (C.gaepan / 2 * S), w, up)
+	p.Parent = model
+end
+
+-- 서까래 하나. 밑면 선이 sIn·sOut(도리 윗면)을 지나고 sOut 밖 overhang 수평거리에서 끝난다. 끝을 rise만큼 들도록 sOut 축으로 돌린 각을 돌려준다.
+-- 윗면에 개판(너비 width)을 덮고, pts가 있으면 초매기 자리를 모은다
+local function rafter(model: Model, name: string, f: Face, a: number, sIn: Vector2, sOut: Vector2, overhang: number, spec: any, rise: number, width: number, pts: { Pt }?): number
 	local u = (sOut - sIn).Unit
 	local tip = sOut + u * (overhang / u.X) + Vector2.new(0, rise)
 	local u2 = (tip - sOut).Unit
@@ -79,11 +101,13 @@ local function rafter(model: Model, name: string, f: Face, a: number, sIn: Vecto
 	local pos = at(f, a, c)
 	p.CFrame = CFrame.lookAt(pos, pos + dir(f, u2)) * CFrame.Angles(0, math.pi / 2, 0)
 	p.Parent = model
+	local tipTop = tip + n * spec.dia
+	cover(model, "Gaepan", at(f, a, tipTop - u2 * spec.length), at(f, a, tipTop), dir(f, n), width, pts and C.chomaegi, pts)
 	return math.atan2(u2.Y, u2.X) - math.atan2(u.Y, u.X)
 end
 
--- 부연 메시 하나를 윗면 꼬리·끝 점(스터드 좌표)에 맞춰 놓는다
-local function buyeonAt(model: Model, src: MeshPart, name: string, tail: Vector3, tip: Vector3, length: number)
+-- 부연 메시 하나를 윗면 꼬리·끝 점(스터드 좌표)에 맞춰 놓고, 윗면에 부연개판을 덮고 이매기 자리를 모은다
+local function buyeonAt(model: Model, src: MeshPart, name: string, tail: Vector3, tip: Vector3, length: number, width: number, pts: { Pt })
 	local B = C.buyeon
 	local w = (tip - tail).Unit
 	local m = (Vector3.yAxis - w * w.Y).Unit
@@ -95,13 +119,14 @@ local function buyeonAt(model: Model, src: MeshPart, name: string, tail: Vector3
 	p.Size = Vector3.new(length, height, B.width) * S
 	p.CFrame = CFrame.fromMatrix(tail + (w * (length / 2 - B.topFrom * k) - m * (height / 2)) * S, w, m)
 	p.Parent = model
+	cover(model, "BuyeonGaepan", tail, tip, m, width, C.imaegi, pts)
 end
 
 -- 평연 부연: 윗면 꼬리·끝 점(외목도리 중심·윗면 기준)을 서까래와 같은 각만큼 sOut 축으로 돌려 놓는다
-local function buyeon(model: Model, src: MeshPart, f: Face, a: number, sOut: Vector2, spec: any, angle: number)
+local function buyeon(model: Model, src: MeshPart, f: Face, a: number, sOut: Vector2, spec: any, angle: number, width: number, pts: { Pt })
 	local tail = rotate(sOut + Vector2.new(spec.tail[1], spec.tail[2]), sOut, angle)
 	local tip = rotate(sOut + Vector2.new(spec.tip[1], spec.tip[2]), sOut, angle)
-	buyeonAt(model, src, "Buyeon", at(f, a, tail), at(f, a, tip), spec.length)
+	buyeonAt(model, src, "Buyeon", at(f, a, tail), at(f, a, tip), spec.length, width, pts)
 end
 
 -- 측면 외곽선 메시를 놓는다. origin = 외곽선 (0,0)의 자리(스터드), uAxis·vAxis = 외곽선 u·v 방향, scale = 외곽선 늘림
@@ -135,8 +160,40 @@ end
 -- 층 하나의 모서리 정보
 type Layer = { E: any, hx: number, hz: number, inner: any, outset: number, outerTop: number }
 
+-- 한 면의 처마선: out = 바깥, lat = 면을 따라 + 방향, h·hLat = 기둥열 반폭(out·lat 방향), cho·i = 초매기·이매기 점
+type Eave = { out: Vector3, lat: Vector3, h: number, hLat: number, cho: { Pt }, i: { Pt } }
+
+-- 처마선 점들을 lat 순으로 이어 초매기·이매기를 놓는다. 양 끝은 모서리 대각선 면(추녀·사래 위)까지 늘린다.
+-- ponytail: 토막마다 곧은 Part라 꺾이는 바깥쪽에 아주 작은 틈이 생긴다(앙곡 구간에서 1cm 안팎)
+local function maegi(model: Model, name: string, ev: Eave, pts: { Pt }, spec: any)
+	table.sort(pts, function(a: Pt, b: Pt): boolean
+		return a.p:Dot(ev.lat) < b.p:Dot(ev.lat)
+	end)
+	local function toDiagonal(p: Pt, q: Pt, sgn: number): Pt -- q → p 방향으로 대각선 면까지
+		local corner = (ev.out * ev.h + ev.lat * sgn * ev.hLat) * S
+		local nrm = ev.out - ev.lat * sgn
+		local d = p.p - q.p
+		return { p = p.p + d * ((corner - p.p):Dot(nrm) / d:Dot(nrm)), n = p.n }
+	end
+	local run = table.clone(pts)
+	table.insert(run, 1, toDiagonal(pts[1], pts[2], -1))
+	table.insert(run, toDiagonal(pts[#pts], pts[#pts - 1], 1))
+	for i = 2, #run do
+		local a, b = run[i - 1], run[i]
+		local x = (b.p - a.p).Unit
+		local up = a.n + b.n
+		up = (up - x * up:Dot(x)).Unit
+		local p = Instance.new("Part")
+		p.Name = name
+		setup(p, WOOD)
+		p.Size = Vector3.new((b.p - a.p).Magnitude, spec.height * S, spec.width * S)
+		p.CFrame = CFrame.fromMatrix((a.p + b.p) / 2 + up * (spec.height / 2 * S), x, up)
+		p.Parent = model
+	end
+end
+
 -- 한 면의 선자연·선자부연 (모서리 하나, 면 하나). aC·dC = 부채 중심, h = 그 면 기둥열 반폭, lastA = 마지막 평연, 돌려주는 값 = 선자연 수
-local function fan(model: Model, src: MeshPart?, Y: Layer, f: Face, h: number, hLat: number, row: any, spacing: number, riseTable: any): number
+local function fan(model: Model, src: MeshPart?, Y: Layer, f: Face, h: number, hLat: number, row: any, spacing: number, riseTable: any, ev: Eave): number
 	local E, inner = Y.E, Y.inner
 	local sIn, sOut = Vector2.new(h - inner.inset, inner.top), Vector2.new(h + Y.outset, Y.outerTop)
 	local u = (sOut - sIn).Unit
@@ -177,16 +234,42 @@ local function fan(model: Model, src: MeshPart?, Y: Layer, f: Face, h: number, h
 		local c = (pc + pe) / 2 - wu * E.fan.tail / 2 * S + n * dia / 2 * S
 		p.CFrame = CFrame.lookAt(c, c + wu) * CFrame.Angles(0, math.pi / 2, 0)
 		p.Parent = model
+		-- ponytail: 개판은 끝 간격 너비 그대로라 부채 중심 쪽에서 서로 겹친다(지붕 안쪽)
+		local tipTop = pe + n * dia * S
+		cover(model, "Gaepan", tipTop - wu * length * S, tipTop, n, spacing, C.chomaegi, ev.cho)
 		if src then
 			local hu = Vector3.new(w.X, 0, w.Z).Unit
 			local tail = pe + (hu * tailRel.X + Vector3.yAxis * tailRel.Y) * S
 			local tip = pe + (hu * tipRel.X + Vector3.yAxis * tipRel.Y) * S
 			local len = B.length + (E.fan.buyeonLength - B.length) * (if #ends > 1 then (i - 1) / (#ends - 1) else 1)
 			tip += (tip - tail).Unit * (len - B.length) * S
-			buyeonAt(model, src :: MeshPart, "SeonjaBuyeon", tail, tip, len)
+			buyeonAt(model, src :: MeshPart, "SeonjaBuyeon", tail, tip, len, spacing, ev.i)
 		end
 	end
 	return #ends
+end
+
+-- 순각판: 출목 장여 사이마다 건물을 한 바퀴 두르는 판 (앞뒤 판이 모서리까지, 양옆 판은 그 사이).
+-- ponytail: 판을 면마다 한 장으로 이어 공포 제공·대보가 판을 뚫고 지난다(실제는 판을 따내 끼움, 밑에서 보면 같다)
+local function sungakpan(model: Model, hx: number, hz: number, outerTop: number, spec: any)
+	local P = C.sungakpan
+	local y = outerTop + spec.top - P.thickness / 2 - D.level.ground
+	local function slab(pos: Vector3, size: Vector3)
+		local p = Instance.new("Part")
+		p.Name = "Sungakpan"
+		setup(p, WOOD)
+		p.Size = size * S
+		p.CFrame = CFrame.new(pos * S)
+		p.Parent = model
+	end
+	for k = spec.from, spec.to - 1 do
+		local off = (k + 0.5) * G.outset
+		local ax, az = hx + off, hz + off
+		for _, sg in { -1, 1 } do
+			slab(Vector3.new(0, y, sg * az), Vector3.new(2 * ax + P.width, P.thickness, P.width))
+			slab(Vector3.new(sg * ax, y, 0), Vector3.new(P.width, P.thickness, 2 * az - P.width))
+		end
+	end
 end
 
 -- 모서리 하나 (sx, sz = 동서·남북 부호): 추녀·사래·갈모산방
@@ -268,6 +351,16 @@ return function()
 		local model = Instance.new("Model")
 		model.Name = name
 		model.Parent = root
+		sungakpan(model, hx, hz, outerTop, if name == "Lower" then C.sungakpan.lower else C.sungakpan.upper)
+		-- 면마다 처마선 (out 방향으로 찾는다)
+		local eaves: { [string]: Eave } = {}
+		local function eave(f: Face, h: number, hLat: number): Eave
+			local key = `{math.round(f.out.X)},{math.round(f.out.Z)}`
+			if not eaves[key] then
+				eaves[key] = { out = f.out, lat = Vector3.new(math.abs(f.lat.X), 0, math.abs(f.lat.Z)), h = h, hLat = hLat, cho = {}, i = {} }
+			end
+			return eaves[key]
+		end
 		-- 면 4개: { 면, 기둥열 반폭(out 방향), 평연 }
 		local faces = {
 			{ { lat = Vector3.xAxis, out = Vector3.zAxis }, hz, E.front, E.rise.front }, -- 남
@@ -279,11 +372,12 @@ return function()
 			local f, h, row, riseTable = fc[1] :: Face, fc[2] :: number, fc[3] :: any, fc[4] :: any
 			local sIn, sOut = Vector2.new(h - inner.inset, inner.top), Vector2.new(h + outset, outerTop)
 			assert(math.abs(slopeDeg(sIn, sOut) - E.slope) < 0.5, `{name} 장연 물매 {slopeDeg(sIn, sOut)}° (S4 017 {E.slope}°)`)
+			local ev = eave(f, h, if f.lat == Vector3.xAxis then hx else hz)
 			for _, a in laterals(row.count, row.spacing) do
-				local angle = rafter(model, "Jangyeon", f, a, sIn, sOut, E.overhang, E.jangyeon, riseAt(riseTable, a))
+				local angle = rafter(model, "Jangyeon", f, a, sIn, sOut, E.overhang, E.jangyeon, riseAt(riseTable, a), row.spacing, ev.cho)
 				count.jangyeon += 1
 				if src then
-					buyeon(model, src :: MeshPart, f, a, sOut, E.buyeon, angle)
+					buyeon(model, src :: MeshPart, f, a, sOut, E.buyeon, angle, row.spacing, ev.i)
 					count.buyeon += 1
 				end
 			end
@@ -293,7 +387,7 @@ return function()
 				local dIn, dOut = Vector2.new(0, jd.top), sIn
 				assert(math.abs(slopeDeg(dIn, dOut) - dn.slope) < 0.5, `단연 물매 {slopeDeg(dIn, dOut)}° (S4 017 {dn.slope}°)`)
 				for _, a in laterals(E.danyeonCount, row.spacing) do
-					rafter(model, "Danyeon", f, a, dIn, dOut, dn.overhang, dn, 0)
+					rafter(model, "Danyeon", f, a, dIn, dOut, dn.overhang, dn, 0, row.spacing)
 					count.danyeon += 1
 				end
 			end
@@ -305,8 +399,14 @@ return function()
 				corner(model, folder, Y, sx, sz)
 				local front: Face = { lat = Vector3.xAxis * sx, out = Vector3.zAxis * sz }
 				local side: Face = { lat = Vector3.zAxis * sz, out = Vector3.xAxis * sx }
-				count.seonja[name] += fan(model, src, Y, front, hz, hx, E.front, E.fan.front, E.rise.front)
-				count.seonja[name] += fan(model, src, Y, side, hx, hz, E.side, E.fan.side, E.rise.side)
+				count.seonja[name] += fan(model, src, Y, front, hz, hx, E.front, E.fan.front, E.rise.front, eave(front, hz, hx))
+				count.seonja[name] += fan(model, src, Y, side, hx, hz, E.side, E.fan.side, E.rise.side, eave(side, hx, hz))
+			end
+		end
+		for _, ev in eaves do
+			maegi(model, "Chomaegi", ev, ev.cho, { width = C.chomaegi.width, height = E.chomaegiHeight })
+			if src then
+				maegi(model, "Imaegi", ev, ev.i, C.imaegi)
 			end
 		end
 	end
