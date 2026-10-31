@@ -1,6 +1,6 @@
 --!strict
--- 축부(기둥·창방·평방·대보·충량·하층 도리)를 Part로 짓는다. 단면이 일정한 부재라 메시 없이 Part로 충분하다.
--- 원점 = 문루 중심 지면, 남 = +Z, 동 = +X. ponytail: 초석·장화반·보머리 삼분두·상층 도리는 아직 (상층 도리는 상층 공포와 함께)
+-- 축부(기둥·창방·평방·대보·충량·외목도리)를 Part로 짓는다. 단면이 일정한 부재라 메시 없이 Part로 충분하다.
+-- 원점 = 문루 중심 지면, 남 = +Z, 동 = +X. ponytail: 초석·장화반·보머리 삼분두, 상층 주심·내목·중·종도리(지붕 가구, C 단계)는 아직
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Units = require(ReplicatedStorage.Core.Units)
@@ -135,6 +135,19 @@ return function()
 		beam("Chungryang", Vector2.new(from, 0), Vector2.new(from + sgn * bm.length, 0), beamBottom, bm.width, bm.height)
 	end
 
+	-- 상층 대보(앞뒤)·충량(양옆): 고주 줄에서 바깥으로, 상층 주상포 사제공 자리를 지난다
+	local ub = K.upperBeam
+	local upperBeamBottom = L.upperColumnTop + D.upperPyeongbangHeight + ub.base
+	for i = 2, #ux - 1 do
+		for _, sgn in { -1, 1 } do
+			beam("UpperDaebo", Vector2.new(ux[i], 0), Vector2.new(ux[i], sgn * ub.length), upperBeamBottom, ub.width, ub.height)
+		end
+	end
+	for _, sgn in { -1, 1 } do
+		local from = sgn * xs[#xs - 1]
+		beam("UpperChungryang", Vector2.new(from, 0), Vector2.new(from + sgn * ub.length, 0), upperBeamBottom, ub.height, ub.height) -- 충량 462×462 (S4 095)
+	end
+
 	-- 하층 외목도리·장여(외2출목, 모서리에서 만남)와 내목도리(내2출목)
 	local od, oj, id = K.lowerOuterDori, K.lowerOuterJangyeo, K.lowerInnerDori
 	local doriBottom = L.lowerEave
@@ -151,6 +164,14 @@ return function()
 	end)
 	rect(lx - id.inset, lz - id.inset, function(a, b)
 		beam("LowerInnerDori", a, b, id.top - id.dia, id.dia, id.dia, true)
+	end)
+
+	-- 상층 외목도리·장여(외3출목). 윗면 = S4 021 2F_OUTSIDE_DORI_UPPER
+	local uod, uoj = K.upperOuterDori, K.upperOuterJangyeo
+	rect(px + uod.outset, pz + uod.outset, function(a, b)
+		local d = (b - a).Unit * uod.dia / 2
+		beam("UpperOuterDori", a - d, b + d, L.upperEave, uod.dia, uod.dia, true)
+		beam("UpperOuterJangyeo", a, b, L.upperEave - uoj.height, uoj.width, uoj.height)
 	end)
 
 	model.Parent = workspace

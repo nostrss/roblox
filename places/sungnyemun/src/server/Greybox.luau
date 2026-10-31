@@ -107,10 +107,9 @@ return function()
 	local m = BASE_MARGIN
 	block("PavilionBase", -lx - m, H, -lz - m, lx + m, y(L.pavilionFloor), lz + m, STONE)
 
-	-- 상층 벽·공포대: 기둥 위~처마선을 기둥열 크기 덩어리로 채운다. ponytail: 상층 공포·창호는 부재로 교체 예정
+	-- 상층 벽: 마루~기둥 상을 기둥열 크기 덩어리로 채운다. ponytail: 창호·판벽은 D 단계에서 부재로 교체
 	local px, pz = ux[#ux], uz[#uz]
 	block("UpperWall", -px, y(L.upperFloor), -pz, px, y(L.upperColumnTop), pz, WOOD)
-	block("UpperBrackets", -px, y(L.upperColumnTop), -pz, px, y(L.upperEave), pz, WOOD)
 
 	-- 하층 지붕: 외목도리 위~상층 마루를 채운 판. ponytail: 경사·곡선 없음
 	local lo = D.eaveOverhang.lower
@@ -118,7 +117,7 @@ return function()
 
 	-- 상층 지붕: 앞뒤 두 경사면(박공 형태). ponytail: 우진각 모서리·처마 곡선은 Studio 모델로
 	local hx, hz = ux[#ux] + D.eaveOverhang.upper, uz[#uz] + D.eaveOverhang.upper
-	local y0, y1 = y(L.upperEave), y(L.ridgeTop)
+	local y0, y1 = y(L.upperEave + 0.400), y(L.ridgeTop) -- 외목도리(지름 0.400, S4 102) 위에서 시작
 	local size = Vector3.new(s(hx * 2), s(y1 - y0), s(hz))
 	local mid = s((y0 + y1) / 2)
 	part("UpperRoofSouth", CFrame.new(0, mid, s(hz / 2)) * CFrame.Angles(0, math.pi, 0), size, ROOF, "WedgePart")

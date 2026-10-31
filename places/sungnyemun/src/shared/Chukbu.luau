@@ -15,5 +15,8 @@ return {
 	lowerBeam = { width = 0.462, height = 0.524, length = 5.160, base = 0.625 }, -- S4 092 하층대보·093 충량. 밑면 = 주두 밑 + 삼제공 자리(Gongpo)
 	lowerOuterDori = { dia = 0.400, outset = 0.740 }, -- S4 099 하층외목도리 (외2출목). 윗면 레벨은 Dimensions
 	lowerOuterJangyeo = { width = 0.108, height = 0.154 }, -- S4 113 하외목도리장여. 외목도리 바로 밑
+	upperBeam = { width = 0.401, height = 0.462, length = 4.790, base = 0.820 }, -- S4 094 상층대보 (095 충량 462×462). 밑면 = 상층 주두 밑 + 사제공 자리
+	upperOuterDori = { dia = 0.400, outset = 1.110 }, -- S4 102 상층외목도리 (외3출목)
+	upperOuterJangyeo = { width = 0.108, height = 0.154 }, -- 하층 장여와 같은 단면으로 둔다 (S4 116 미확인)
 	lowerInnerDori = { dia = 0.384, inset = 0.740, top = 4.883 }, -- S4 101 하층내목도리 지름, 윗면 S4 021 1F_INSIDE_DORI_UPPER +13.021 − 8.138
 }

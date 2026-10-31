@@ -120,8 +120,8 @@ local function add(name: string): Mesh
 end
 
 local judu = add("Judu")
-frustum(judu, G.judu.bottom, G.judu.top, 0, G.judu.foot)
-frustum(judu, G.judu.top, G.judu.top, G.judu.foot, G.judu.height - G.judu.foot)
+frustum(judu, G.lower.judu.bottom, G.lower.judu.top, 0, G.lower.judu.foot)
+frustum(judu, G.lower.judu.top, G.lower.judu.top, G.lower.judu.foot, G.lower.judu.height - G.lower.judu.foot)
 
 local soro = add("Soro")
 frustum(soro, G.soro.bottom, G.soro.top, 0, G.soro.foot)
