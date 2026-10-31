@@ -6,3 +6,6 @@
 
 sourcemap.json
 .DS_Store
+
+# 원본 참고자료(도면·PDF) — git 제외, 출처는 SOURCES.md
+places/*/refs/
