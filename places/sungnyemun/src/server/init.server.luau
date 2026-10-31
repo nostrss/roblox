@@ -1,1 +1,4 @@
-print("Hello world, from server!")
+--!strict
+require(script.Greybox)()
+require(script.Chukbu)()
+require(script.Gongpo)()
