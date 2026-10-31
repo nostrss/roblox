@@ -9,6 +9,7 @@ local Units = require(ReplicatedStorage.Core.Units)
 local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local G = require(ReplicatedStorage.Shared.Gongpo)
+local setup = require(script.Parent.Member)
 
 local s = Units.studs
 local WOOD = Color3.fromRGB(150, 95, 60)
@@ -25,10 +26,7 @@ end
 -- 부재 메시 하나를 frame 기준 cf에 놓는다. center·size는 메시 경계 상자(m)
 local function place(model: Model, src: MeshPart, frame: CFrame, cf: CFrame, center: Vector3, size: Vector3)
 	local p = src:Clone()
-	p.Anchored = true
-	p.CanCollide = false
-	p.Material = Enum.Material.Wood
-	p.Color = WOOD
+	setup(p, WOOD)
 	p.Size = Vector3.new(s(size.X), s(size.Y), s(size.Z))
 	p.CFrame = frame * cf * CFrame.new(s(center.X), s(center.Y), s(center.Z))
 	p.Parent = model

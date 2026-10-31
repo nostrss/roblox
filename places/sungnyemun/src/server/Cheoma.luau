@@ -10,6 +10,7 @@ local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local K = require(ReplicatedStorage.Shared.Chukbu)
 local C = require(ReplicatedStorage.Shared.Cheoma)
+local setup = require(script.Parent.Member)
 
 local S = Units.studs(1)
 local WOOD = Color3.fromRGB(120, 60, 45) -- 석간주 근사 (단청은 F 단계)
@@ -71,9 +72,7 @@ local function rafter(model: Model, name: string, f: Face, a: number, sIn: Vecto
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Shape = Enum.PartType.Cylinder
-	p.Anchored = true
-	p.Material = Enum.Material.Wood
-	p.Color = WOOD
+	setup(p, WOOD)
 	p.Size = Vector3.new(spec.length, spec.dia, spec.dia) * S
 	local pos = at(f, a, c)
 	p.CFrame = CFrame.lookAt(pos, pos + dir(f, u2)) * CFrame.Angles(0, math.pi / 2, 0)
@@ -93,10 +92,7 @@ local function buyeon(model: Model, src: MeshPart, f: Face, a: number, sOut: Vec
 	local c = tail + w * (spec.length / 2 - B.topFrom * k) - m * (height / 2)
 	local p = src:Clone()
 	p.Name = "Buyeon"
-	p.Anchored = true
-	p.CanCollide = false
-	p.Material = Enum.Material.Wood
-	p.Color = WOOD
+	setup(p, WOOD)
 	p.Size = Vector3.new(spec.length, height, B.width) * S
 	p.CFrame = CFrame.fromMatrix(at(f, a, c), dir(f, w), dir(f, m))
 	p.Parent = model

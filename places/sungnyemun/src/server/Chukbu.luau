@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Units = require(ReplicatedStorage.Core.Units)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local K = require(ReplicatedStorage.Shared.Chukbu)
+local setup = require(script.Parent.Member)
 
 local s = Units.studs
 local L = D.level
@@ -37,9 +38,7 @@ return function()
 	local function part(name: string, cf: CFrame, size: Vector3, cylinder: boolean?)
 		local p = Instance.new("Part")
 		p.Name = name
-		p.Anchored = true
-		p.Material = Enum.Material.Wood
-		p.Color = WOOD
+		setup(p, WOOD, true) -- 기둥 등 축부는 지금처럼 부딪힌다
 		p.Size = Vector3.new(s(size.X), s(size.Y), s(size.Z))
 		p.CFrame = cf
 		if cylinder then
