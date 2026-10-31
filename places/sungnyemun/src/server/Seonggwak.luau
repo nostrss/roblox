@@ -57,7 +57,7 @@ return function()
 			return at, box, slope
 		end
 
-		local corner = Vector3.new(sx * D.wall.width / 2, 0, D.wall.depth / 2)
+		local corner = Vector3.new(sx * D.wall.width / 2, 0, D.wall.south)
 		local at, box, slope = frame(corner, G.angle)
 		local ta = A.pitch - P.gap
 		local t = P.thickness
