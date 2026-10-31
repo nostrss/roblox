@@ -42,6 +42,10 @@ local byName: { [string]: string } = {
 	Pyeongju = "seokganju", Uju = "seokganju", Goju = "seokganju", GwiGoju = "seokganju", UpperPyeongju = "seokganju",
 	-- 문루 마루 (Munru): 귀틀·장선·동바리·마루널은 들기름칠 (S4 181~185 부재표 마감)
 	JangGwiteul = "deulgireum", DongGwiteul = "deulgireum", Jangseon = "deulgireum", Dongbari = "deulgireum", Maruneol = "deulgireum",
+	-- 문루 계단·난간은 석간주 (S4 186~202 부재표 마감)
+	Yeoppan = "seokganju", Didimpan = "seokganju", Chaepan = "seokganju", Dwitneol = "seokganju",
+	Eomjigidung = "seokganju", NanganJibang = "seokganju", Gungpan = "seokganju", NanganDdijang = "seokganju",
+	NanganDongja = "seokganju", Hayeop = "seokganju", Dollandae = "seokganju",
 	Gaepan = "yeonbaek",
 	LowerJibungFront = "giwa", LowerJibungSide = "giwa", UpperJibungFront = "giwa", UpperJibungSide = "giwa",
 	MaruCap = "giwa", Sumaksae = "giwa", Ammaksae = "giwa",

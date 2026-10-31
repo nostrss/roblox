@@ -10,6 +10,7 @@ local SMALL = {
 	Soro = true, SoCheomcha = true, DaeCheomcha = true, Buyeon = true, SeonjaBuyeon = true,
 	Chomaegi = true, Imaegi = true, BuyeonGaepan = true, Sungakpan = true,
 	Sumaksae = true, Ammaksae = true, MaruCap = true,
+	Gungpan = true, NanganDongja = true, Hayeop = true, Dollandae = true, NanganDdijang = true, NanganJibang = true,
 }
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
