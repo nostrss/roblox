@@ -1,20 +1,20 @@
 {
-  "name": "sungnyemun_gate",
+  "name": "sungnyemun",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
+      "Core": {
+        "$path": "../../core"
+      },
       "Shared": {
         "$path": "src/shared"
       }
     },
-
     "ServerScriptService": {
       "Server": {
         "$path": "src/server"
       }
     },
-
     "StarterPlayer": {
       "StarterPlayerScripts": {
         "Client": {
@@ -22,7 +22,6 @@
         }
       }
     },
-
     "Workspace": {
       "$properties": {
         "FilteringEnabled": true
