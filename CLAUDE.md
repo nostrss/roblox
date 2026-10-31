@@ -1,4 +1,4 @@
-# 한국 문화유산 가상답사 (Roblox)
+# 가상답사 (Roblox)
 
 사찰·건축물·랜드마크를 실측 비율로 재현해 "답사하듯" 걷는 공간. 쇼케이스 이상, 게임 미만.
 기획 메모: https://claude.ai/artifact/NbrSpp5L8zZ1pjh85ezd4R
