@@ -1,5 +1,5 @@
 --!strict
--- 숭례문 회색 박스: Dimensions 실측값으로 덩어리 형태를 세운다. 세부 형태(곡선 지붕·공포·기와)는 Studio에서.
+-- 숭례문 회색 박스: Dimensions 실측값으로 덩어리 형태를 세운다. 지붕은 처마·지붕 곡면 단계(Cheoma)에서 부재로 짓는다.
 -- 원점 = 문루 중심의 지면, 정면(남) = +Z, 동 = +X.
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,7 +16,6 @@ local STONE = Color3.fromRGB(150, 150, 145)
 local MORTAR = Color3.fromRGB(95, 95, 92)
 local GRANITE = Color3.fromRGB(200, 196, 186)
 local WOOD = Color3.fromRGB(120, 70, 50)
-local ROOF = Color3.fromRGB(70, 70, 75)
 
 -- 실측 가정값(도면에 없음). ponytail: 회색 박스용 근사, 실제 형태는 Studio 모델로 대체
 local PARAPET_THICKNESS = 0.6
@@ -110,18 +109,6 @@ return function()
 	-- 상층 벽: 마루~기둥 상을 기둥열 크기 덩어리로 채운다. ponytail: 창호·판벽은 D 단계에서 부재로 교체
 	local px, pz = ux[#ux], uz[#uz]
 	block("UpperWall", -px, y(L.upperFloor), -pz, px, y(L.upperColumnTop), pz, WOOD)
-
-	-- 하층 지붕: 외목도리 위~상층 마루를 채운 판. ponytail: 경사·곡선 없음
-	local lo = D.eaveOverhang.lower
-	block("LowerRoof", -lx - lo, y(L.lowerEave + 0.400), -lz - lo, lx + lo, y(L.upperFloor), lz + lo, ROOF) -- 0.400 = 외목도리 지름(S4 099)
-
-	-- 상층 지붕: 앞뒤 두 경사면(박공 형태). ponytail: 우진각 모서리·처마 곡선은 Studio 모델로
-	local hx, hz = ux[#ux] + D.eaveOverhang.upper, uz[#uz] + D.eaveOverhang.upper
-	local y0, y1 = y(L.upperEave + 0.400), y(L.ridgeTop) -- 외목도리(지름 0.400, S4 102) 위에서 시작
-	local size = Vector3.new(s(hx * 2), s(y1 - y0), s(hz))
-	local mid = s((y0 + y1) / 2)
-	part("UpperRoofSouth", CFrame.new(0, mid, s(hz / 2)) * CFrame.Angles(0, math.pi, 0), size, ROOF, "WedgePart")
-	part("UpperRoofNorth", CFrame.new(0, mid, s(-hz / 2)), size, ROOF, "WedgePart")
 
 	-- 남쪽 광장 시작 위치
 	local spawnPoint = Instance.new("SpawnLocation")

@@ -1,10 +1,11 @@
 --!strict
--- 공포 부재 데이터(Gongpo.luau)를 부재 종류마다 OBJ 메시로 굽는다. 단위 스터드, 메시 중심 = 경계 상자 중심.
+-- 공포·처마 부재 데이터(Gongpo.luau, Cheoma.luau)를 부재 종류마다 OBJ 메시로 굽는다. 단위 스터드, 메시 중심 = 경계 상자 중심.
 -- usage (저장소 루트에서):
 --   luau tools/gongpo_obj.luau | awk '/^#FILE /{f=d"/"$2".obj"; next} {print > f}' d=places/sungnyemun/meshes
 -- 결과 .obj를 Studio 3D Importer로 올리고, MeshPart들을 MemberMeshes 태그를 단 Folder 하나에 넣는다.
 -- 배치 코드(src/server/Gongpo.luau)는 MeshPart 크기·위치를 데이터에서 다시 정하므로 임포트 단위 설정은 상관없다.
 local G = require("../places/sungnyemun/src/shared/Gongpo")
+local C = require("../places/sungnyemun/src/shared/Cheoma")
 
 local STUD = 0.34 -- core/Units.luau METERS_PER_STUD 와 같아야 한다
 
@@ -153,6 +154,7 @@ for _, name in names do
 end
 
 extrude(add("Unggong"), G.unggong, G.thickness)
+extrude(add("Buyeon"), C.buyeon.profile, C.buyeon.width) -- 처마 부연 (Cheoma.luau)
 
 for _, e in meshes do
 	local lo, hi = { math.huge, math.huge, math.huge }, { -math.huge, -math.huge, -math.huge }
