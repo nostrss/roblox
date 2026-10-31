@@ -77,3 +77,4 @@ places/<이름>/        Place 하나 = Rojo 프로젝트 하나
 ## Git
 
 - Conventional Commits, scope는 Place 이름 또는 `core` (`feat(sungnyemun): ...`, `fix(core): ...`).
+- 작업은 새 브랜치(`feat/...`, `chore/...` 등)에서 커밋한다. main 직접 커밋·머지·푸시는 사용자가 main을 지정해 요청할 때만.
