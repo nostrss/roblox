@@ -46,6 +46,8 @@ local byName: { [string]: string } = {
 	Yeoppan = "seokganju", Didimpan = "seokganju", Chaepan = "seokganju", Dwitneol = "seokganju",
 	Eomjigidung = "seokganju", NanganJibang = "seokganju", Gungpan = "seokganju", NanganDdijang = "seokganju",
 	NanganDongja = "seokganju", Hayeop = "seokganju", Dollandae = "seokganju",
+	-- 상층 벽·하층 하인방 (S4 137~143·203 부재표 마감 석간주)
+	GwiteulInbang = "seokganju", HaInbang = "seokganju", MunInbang = "seokganju", Munseon = "seokganju", Panchang = "seokganju", WallGuard = "seokganju",
 	Gaepan = "yeonbaek",
 	LowerJibungFront = "giwa", LowerJibungSide = "giwa", UpperJibungFront = "giwa", UpperJibungSide = "giwa",
 	MaruCap = "giwa", Sumaksae = "giwa", Ammaksae = "giwa",

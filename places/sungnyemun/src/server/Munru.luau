@@ -1,7 +1,7 @@
 --!strict
--- 문루 마감(데이터 Shared.Munru): 하층·상층 장마루와 귀틀·장선·동바리, 문루 계단과 난간.
+-- 문루 마감(데이터 Shared.Munru): 하층·상층 장마루와 귀틀·장선·동바리, 문루 계단과 난간, 상층 벽.
 -- 건물 축(정면 +Z, 동 +X)으로 짓고 init.server가 건물 자리로 돌린다(ADR 0004). Part만 쓴다.
--- 부딪힘: 걷는 면(마루널)·난간만 켜고 받침 부재는 끈다. 계단은 보이지 않는 경사판 하나로 오른다.
+-- 부딪힘: 걷는 면(마루널)·난간·벽만 켜고 받침 부재는 끈다. 계단은 보이지 않는 경사판 하나로 오른다.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Units = require(ReplicatedStorage.Core.Units)
@@ -265,6 +265,64 @@ local function stair()
 	end
 end
 
+-- 둘레(사각형) 기둥 사이 한 칸씩: a→b(기둥 중심), 안쪽 방향, 칸 번호
+local function ring(cols: { number }, rows: { number }, fn: (Vector2, Vector2, Vector2, number) -> ())
+	local x0, x1, z0, z1 = cols[1], cols[#cols], rows[1], rows[#rows]
+	for i = 1, #cols - 1 do
+		fn(Vector2.new(cols[i], z0), Vector2.new(cols[i + 1], z0), Vector2.new(0, 1), i)
+		fn(Vector2.new(cols[i], z1), Vector2.new(cols[i + 1], z1), Vector2.new(0, -1), i)
+	end
+	for j = 1, #rows - 1 do
+		fn(Vector2.new(x0, rows[j]), Vector2.new(x0, rows[j + 1]), Vector2.new(1, 0), 0)
+		fn(Vector2.new(x1, rows[j]), Vector2.new(x1, rows[j + 1]), Vector2.new(-1, 0), 0)
+	end
+end
+
+-- 수평 부재 a→b (평면 m), 높이 l0~l1 (level), 단면 폭 w
+local function flat(name: string, a: Vector2, b: Vector2, l0: number, l1: number, w: number): BasePart
+	local h = (y(l0) + y(l1)) / 2
+	return along(name, Vector3.new(a.X, h, a.Y), Vector3.new(b.X, h, b.Y), w, l1 - l0, Vector3.yAxis, true)
+end
+
+-- 19. 상층 벽과 하층 하인방
+local function walls()
+	local W = M.wall
+	local hi, mi, ms, ch = W.haInbang, W.munInbang, W.munseon, W.chang
+	local bandTop, bandBottom = mi.bottom, hi.bottom + hi.height -- 판창 자리 (두 인방 사이)
+	ring(ux, uz, function(a, b, inward)
+		local d = (b - a).Unit
+		local r = K.column.upperDia / 2
+		local a1, b1 = a + d * r, b - d * r -- 기둥 면 사이
+		flat("GwiteulInbang", a1, b1, hi.bottom - W.gwiteulInbang.height, hi.bottom, W.gwiteulInbang.width)
+		flat("HaInbang", a1, b1, hi.bottom, bandBottom, hi.width)
+		flat("MunInbang", a1, b1, mi.bottom, mi.bottom + mi.height, mi.width)
+		flat("Munseon", a1, a1 + d * ms.width, bandBottom, bandTop, ms.depth)
+		flat("Munseon", b1 - d * ms.width, b1, bandBottom, bandTop, ms.depth)
+		-- 판창: 문선 사이를 같은 폭으로 나눈 닫힌 널창, 인방 안쪽 면에 붙인다
+		local a2, b2 = a1 + d * ms.width, b1 - d * ms.width
+		local len = (b2 - a2).Magnitude
+		local n = math.max(1, math.round(len / ch.width))
+		local off = inward * (hi.width + ch.thickness) / 2
+		local mid = (bandTop + bandBottom) / 2
+		for k = 1, n do
+			local p0, p1 = a2 + d * ((k - 1) * len / n + 0.003), a2 + d * (k * len / n - 0.003)
+			flat("Panchang", p0 + off, p1 + off, mid - ch.height / 2, mid + ch.height / 2, ch.thickness)
+		end
+		-- 안쪽 면을 평평하게 막는 보이지 않는 벽. 인방·판창 턱을 사다리로 알고 기어올라 넘어가지 않게 (공포 위까지)
+		local g = inward * (hi.width / 2 + ch.thickness + 0.03)
+		flat("WallGuard", a1 + g, b1 + g, U, L.upperColumnTop + 1.5, 0.06).Transparency = 1
+	end)
+	local lh = W.lowerHaInbang
+	ring(xs, zs, function(a, b, _, i)
+		if i == 3 then
+			return -- 어칸 앞뒤는 드나드는 자리라 비운다 (S4 008)
+		end
+		local d = (b - a).Unit
+		local r = K.column.lowerDia / 2
+		flat("HaInbang", a + d * r, b - d * r, F - lh.below, F - lh.below + lh.height, lh.width)
+	end)
+end
+
 return function()
 	if workspace:FindFirstChild("Munru") then
 		return
@@ -274,5 +332,6 @@ return function()
 	lowerFloor()
 	upperFloor()
 	stair()
+	walls()
 	model.Parent = workspace
 end
