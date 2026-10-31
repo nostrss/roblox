@@ -157,7 +157,8 @@ for _, e in meshes do
 	print("#FILE " .. e.name)
 	print("# " .. e.name .. " — tools/gongpo_obj.luau 로 생성. 손으로 고치지 말 것")
 	for _, v in e.mesh.verts do
-		print(string.format("v %.4f %.4f %.4f", (v[1] - (lo[1] + hi[1]) / 2) / STUD, (v[2] - (lo[2] + hi[2]) / 2) / STUD, (v[3] - (lo[3] + hi[3]) / 2) / STUD))
+		-- Studio 3D Importer가 OBJ의 X(와 Z)를 뒤집어 들이므로 Y축 180° 돌려 써서 상쇄한다 (2026-10 확인: 제공 쇠서가 안쪽으로 감)
+		print(string.format("v %.4f %.4f %.4f", -(v[1] - (lo[1] + hi[1]) / 2) / STUD, (v[2] - (lo[2] + hi[2]) / 2) / STUD, -(v[3] - (lo[3] + hi[3]) / 2) / STUD))
 	end
 	for _, f in e.mesh.faces do
 		print(string.format("f %d %d %d", f[1], f[2], f[3]))
