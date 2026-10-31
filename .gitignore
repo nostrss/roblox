@@ -1,0 +1,8 @@
+# Place files (Studio/클라우드에 보관)
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+sourcemap.json
+.DS_Store
