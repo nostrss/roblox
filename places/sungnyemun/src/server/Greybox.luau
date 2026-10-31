@@ -9,6 +9,7 @@ local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local WallStones = require(ReplicatedStorage.Shared.WallStones)
 local Palette = require(ReplicatedStorage.Shared.Palette)
+local Plaza = require(ReplicatedStorage.Shared.Plaza)
 
 local s = Units.studs
 local L = D.level
@@ -110,7 +111,8 @@ return function()
 	local spawnPoint = Instance.new("SpawnLocation")
 	spawnPoint.Anchored = true
 	spawnPoint.Size = Vector3.new(12, 1, 12)
-	spawnPoint.CFrame = CFrame.new(0, 0.5, s(Dp / 2 + 35))
+	local spawnZ = Dp / 2 + 35
+	spawnPoint.CFrame = CFrame.new(0, s(Plaza.floor(spawnZ)) + 0.5, s(spawnZ)) -- 광장 바닥은 문에서 멀수록 높다 (ADR 0006)
 	spawnPoint.Parent = model
 
 	CollectionService:AddTag(model, Tags.GREYBOX)
