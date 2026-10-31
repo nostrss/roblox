@@ -16,7 +16,6 @@ local G = require(ReplicatedStorage.Shared.Gongpo)
 local setup = require(script.Parent.Member)
 
 local S = Units.studs(1)
-local WOOD = Color3.fromRGB(120, 60, 45) -- 석간주 근사 (단청은 F 단계)
 
 local function half(bays: { number }): number
 	local t = 0
@@ -79,7 +78,7 @@ local function cover(model: Model, boardName: string, tailTop: Vector3, tipTop: 
 	end
 	local p = Instance.new("Part")
 	p.Name = boardName
-	setup(p, WOOD)
+	setup(p)
 	p.Size = Vector3.new((stop - tailTop).Magnitude, C.gaepan * S, width * S)
 	p.CFrame = CFrame.fromMatrix((tailTop + stop) / 2 + up * (C.gaepan / 2 * S), w, up)
 	p.Parent = model
@@ -96,7 +95,7 @@ local function rafter(model: Model, name: string, f: Face, a: number, sIn: Vecto
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Shape = Enum.PartType.Cylinder
-	setup(p, WOOD)
+	setup(p)
 	p.Size = Vector3.new(spec.length, spec.dia, spec.dia) * S
 	local pos = at(f, a, c)
 	p.CFrame = CFrame.lookAt(pos, pos + dir(f, u2)) * CFrame.Angles(0, math.pi / 2, 0)
@@ -115,7 +114,7 @@ local function buyeonAt(model: Model, src: MeshPart, name: string, tail: Vector3
 	local k = length / B.profile[3][1] -- 메시(하층 길이)를 이 길이로 늘림
 	local p = src:Clone()
 	p.Name = name
-	setup(p, WOOD)
+	setup(p)
 	p.Size = Vector3.new(length, height, B.width) * S
 	p.CFrame = CFrame.fromMatrix(tail + (w * (length / 2 - B.topFrom * k) - m * (height / 2)) * S, w, m)
 	p.Parent = model
@@ -137,7 +136,7 @@ local function profileAt(model: Model, src: MeshPart, name: string, origin: Vect
 	end
 	local p = src:Clone()
 	p.Name = name
-	setup(p, WOOD)
+	setup(p)
 	p.Size = Vector3.new((u1 - u0) * scale.X, (v1 - v0) * scale.Y, width) * S
 	p.CFrame = CFrame.fromMatrix(origin + (uAxis * (u0 + u1) / 2 * scale.X + vAxis * (v0 + v1) / 2 * scale.Y) * S, uAxis, vAxis)
 	p.Parent = model
@@ -185,7 +184,7 @@ local function maegi(model: Model, name: string, ev: Eave, pts: { Pt }, spec: an
 		up = (up - x * up:Dot(x)).Unit
 		local p = Instance.new("Part")
 		p.Name = name
-		setup(p, WOOD)
+		setup(p)
 		p.Size = Vector3.new((b.p - a.p).Magnitude, spec.height * S, spec.width * S)
 		p.CFrame = CFrame.fromMatrix((a.p + b.p) / 2 + up * (spec.height / 2 * S), x, up)
 		p.Parent = model
@@ -229,7 +228,7 @@ local function fan(model: Model, src: MeshPart?, Y: Layer, f: Face, h: number, h
 		local p = Instance.new("Part")
 		p.Name = "Seonjayeon"
 		p.Shape = Enum.PartType.Cylinder
-		setup(p, WOOD)
+		setup(p)
 		p.Size = Vector3.new(length, dia, dia) * S
 		local c = (pc + pe) / 2 - wu * E.fan.tail / 2 * S + n * dia / 2 * S
 		p.CFrame = CFrame.lookAt(c, c + wu) * CFrame.Angles(0, math.pi / 2, 0)
@@ -257,7 +256,7 @@ local function sungakpan(model: Model, hx: number, hz: number, outerTop: number,
 	local function slab(pos: Vector3, size: Vector3)
 		local p = Instance.new("Part")
 		p.Name = "Sungakpan"
-		setup(p, WOOD)
+		setup(p)
 		p.Size = size * S
 		p.CFrame = CFrame.new(pos * S)
 		p.Parent = model

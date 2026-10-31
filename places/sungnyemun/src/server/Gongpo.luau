@@ -1,7 +1,7 @@
 --!strict
 -- 업로드한 부재 메시(MemberMeshes 태그 Folder 안의 MeshPart)를 복제해 하층 46구·상층 38구 공포를 조립한다.
 -- 메시 원본은 tools/gongpo_obj.luau 가 Gongpo 데이터로 구운 OBJ. 크기·위치는 여기서 데이터로 다시 정한다.
--- Edit 모드 명령창에서 require(game.ServerScriptService.Server.Gongpo)() 로 미리 지어 저장하면 실행 시엔 건너뛴다.
+-- Edit 모드 명령창에서 require(game.ServerScriptService.Server.Gongpo)() 로 미리 지어 저장하면 실행 시엔 짓지 않고 칠만 다시 한다.
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,7 +12,6 @@ local G = require(ReplicatedStorage.Shared.Gongpo)
 local setup = require(script.Parent.Member)
 
 local s = Units.studs
-local WOOD = Color3.fromRGB(150, 95, 60)
 local GWIHANDAE_THICKNESS = 0.151 -- S3 p.283 귀한대 초제공 151×224
 
 local meshes: Instance
@@ -26,7 +25,7 @@ end
 -- 부재 메시 하나를 frame 기준 cf에 놓는다. center·size는 메시 경계 상자(m)
 local function place(model: Model, src: MeshPart, frame: CFrame, cf: CFrame, center: Vector3, size: Vector3)
 	local p = src:Clone()
-	setup(p, WOOD)
+	setup(p)
 	p.Size = Vector3.new(s(size.X), s(size.Y), s(size.Z))
 	p.CFrame = frame * cf * CFrame.new(s(center.X), s(center.Y), s(center.Z))
 	p.Parent = model
@@ -175,7 +174,13 @@ local function floor(F: any, root: Instance, base: number, bays: { number }, sid
 end
 
 return function()
-	if workspace:FindFirstChild("Gongpo") then
+	local saved = workspace:FindFirstChild("Gongpo")
+	if saved then -- Edit에 저장된 공포: 다시 짓지 않고 Palette로 다시 칠만 한다 (저장 뒤 칠이 바뀌어도 맞게)
+		for _, p in saved:GetDescendants() do
+			if p:IsA("BasePart") then
+				setup(p)
+			end
+		end
 		return
 	end
 	local folder = CollectionService:GetTagged(Tags.MEMBER_MESHES)[1]

@@ -10,7 +10,6 @@ local setup = require(script.Parent.Member)
 
 local s = Units.studs
 local L = D.level
-local WOOD = Color3.fromRGB(120, 60, 45) -- 석간주 근사 (단청은 F 단계)
 
 local function y(level: number): number
 	return level - L.ground
@@ -38,7 +37,7 @@ return function()
 	local function part(name: string, cf: CFrame, size: Vector3, cylinder: boolean?)
 		local p = Instance.new("Part")
 		p.Name = name
-		setup(p, WOOD, true) -- 기둥 등 축부는 지금처럼 부딪힌다
+		setup(p, true) -- 기둥 등 축부는 지금처럼 부딪힌다
 		p.Size = Vector3.new(s(size.X), s(size.Y), s(size.Z))
 		p.CFrame = cf
 		if cylinder then
