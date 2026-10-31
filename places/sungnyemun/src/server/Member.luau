@@ -8,6 +8,7 @@
 local SMALL = {
 	Soro = true, SoCheomcha = true, DaeCheomcha = true, Buyeon = true, SeonjaBuyeon = true,
 	Chomaegi = true, Imaegi = true, BuyeonGaepan = true, Sungakpan = true,
+	Sumaksae = true, Ammaksae = true, MaruCap = true,
 }
 
 return function(p: BasePart, color: Color3, collide: boolean?)

@@ -75,10 +75,11 @@ local function columns(limit: number, sp: number): { number }
 	return out
 end
 
-type Mesh = { verts: { { number } }, faces: { { number } }, gol: number }
+-- eave = 처마 끝 막새 자리 { a, e, 높이, 0 수막새 | 1 암막새 }, hip = +a 쪽 추녀마루 선 { a, e, 높이 } (위 끝 → 처마 끝)
+type Mesh = { verts: { { number } }, faces: { { number } }, gol: number, eave: { { number } }, hip: { { number } } }
 
 local function build(E: any, L: any, f: Face, other: Face): Mesh
-	local m: Mesh = { verts = {}, faces = {}, gol = 0 }
+	local m: Mesh = { verts = {}, faces = {}, gol = 0, eave = {}, hip = {} }
 	local prof, rows, sp = L.profile, L.rows, L.spacing
 	local function depth(e: number): number -- 기와골 깊이 (처마 쪽에서 얕아짐)
 		return if L.depth then interp(L.depth, e) else DEPTH
@@ -188,6 +189,20 @@ local function build(E: any, L: any, f: Face, other: Face): Mesh
 	-- 기와골 수 = 처마 끝에서 수키와 중심 수
 	local la = hip(edge)
 	m.gol = 2 * math.floor(la / sp) + 1
+	-- 막새 자리: 수막새 = 수키와 중심(k·sp), 암막새 = 골 가운데((k+½)·sp). 귀 쪽은 추녀마루에 닿기 전까지
+	for k = -math.ceil(la / sp), math.ceil(la / sp) do
+		for kind = 0, 1 do
+			local a = (k + kind / 2) * sp
+			if math.abs(a) <= la - 0.15 then
+				local y = interp(prof, edge) + riseAt(f, a) - kind * depth(edge)
+				table.insert(m.eave, { a, edge + outAt(E, f, a), y, kind })
+			end
+		end
+	end
+	for i = 0, 12 do
+		local a, e, y = hip(top + (edge - top) * i / 12)
+		table.insert(m.hip, { a, e, y })
+	end
 	return m
 end
 
@@ -201,6 +216,17 @@ for _, layer in { { "Lower", C.lower, J.lower, D.lowerBays, D.lowerSideBays }, {
 	for _, fc in { { "Front", front, side }, { "Side", side, front } } do
 		local m = build(E, L, fc[2] :: Face, fc[3] :: Face)
 		local mname = name .. "Jibung" .. fc[1]
+		local f = fc[2] :: Face
+		-- 막새·추녀마루 점을 월드 사분면 좌표 { x, 높이, z }로 (앞면 a = x, 옆면 a = z)
+		local function place(list: { { number } })
+			for _, q in list do
+				local a, out = q[1], f.h + q[2]
+				q[1], q[2] = if fc[1] == "Front" then a else out, q[3]
+				q[3] = if fc[1] == "Front" then out else a
+			end
+		end
+		place(m.eave)
+		place(m.hip)
 		if fc[1] == "Side" then -- 옆면은 동(+X) 면으로: (a, y, x) → (x = 바깥, z = a)
 			for _, v in m.verts do
 				v[1], v[3] = v[3], v[1]
@@ -237,8 +263,16 @@ for _, e in out do
 	end
 	local c = { (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2, (lo[3] + hi[3]) / 2 }
 	assert(#m.faces < 10000, `{e.name}: 삼각형 {#m.faces} (Studio 임포트 한도 안쪽으로)`)
-	table.insert(meta, string.format("\t%s = { center = { %.4f, %.4f, %.4f }, size = { %.4f, %.4f, %.4f }, tris = %d, gol = %d },",
+	table.insert(meta, string.format("\t%s = { center = { %.4f, %.4f, %.4f }, size = { %.4f, %.4f, %.4f }, tris = %d, gol = %d,",
 		e.name, c[1], c[2], c[3], hi[1] - lo[1], hi[2] - lo[2], hi[3] - lo[3], #m.faces, m.gol))
+	for _, key in { "eave", "hip" } do
+		local pts = {}
+		for _, q in (m :: any)[key] do
+			table.insert(pts, if #q == 4 then string.format("{ %.3f, %.3f, %.3f, %d }", q[1], q[2], q[3], q[4]) else string.format("{ %.3f, %.3f, %.3f }", q[1], q[2], q[3]))
+		end
+		table.insert(meta, `\t\t{key} = \{ {table.concat(pts, ", ")} \},`)
+	end
+	table.insert(meta, "\t},")
 	print("#FILE places/sungnyemun/meshes/" .. e.name .. ".obj")
 	print("# " .. e.name .. " — tools/jibung_obj.luau 로 생성. 손으로 고치지 말 것")
 	for _, v in m.verts do
@@ -254,6 +288,7 @@ print("#FILE places/sungnyemun/src/shared/JibungMeshes.luau")
 print("--!strict")
 print("-- tools/jibung_obj.luau 로 생성. 손으로 고치지 말 것")
 print("-- 지붕 메시 경계 상자 (m, 레벨 기준). 앞면 = 남, 옆면 = 동. tris = 삼각형 수, gol = 처마 끝 기와골(수키와) 수")
+print("-- eave = 막새 자리 { x, 높이, z, 0 수막새 | 1 암막새 } (처마 끝 수키와 등·골 바닥), hip = 동남 추녀마루 선 { x, 높이, z } (위 → 처마)")
 print("return {")
 for _, line in meta do
 	print(line)
