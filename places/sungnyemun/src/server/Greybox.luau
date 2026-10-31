@@ -21,8 +21,6 @@ local ROOF = Color3.fromRGB(70, 70, 75)
 -- 실측 가정값(도면에 없음). ponytail: 회색 박스용 근사, 실제 형태는 Studio 모델로 대체
 local PARAPET_THICKNESS = 0.6
 local BASE_MARGIN = 0.6 -- 문루 기단이 하층 기둥 중심 밖으로 나간 거리
-local LOWER_COLUMN_DIA = 0.6 -- S3 p.293 고주 하부 606㎜ 근사
-local UPPER_COLUMN_DIA = 0.5
 local STONE_DEPTH = 0.3 -- 면에 붙이는 돌 두께
 local JOINT = 0.015 -- 줄눈 절반 폭 (도면 사각형을 이만큼씩 줄인다)
 
@@ -71,16 +69,6 @@ return function()
 		)
 	end
 
-	local function column(name: string, x: number, z: number, y0: number, y1: number, dia: number)
-		local p = part(
-			name,
-			CFrame.new(s(x), s((y0 + y1) / 2), s(z)) * CFrame.Angles(0, 0, math.pi / 2),
-			Vector3.new(s(y1 - y0), s(dia), s(dia)),
-			WOOD
-		)
-		;(p :: Part).Shape = Enum.PartType.Cylinder
-	end
-
 	-- 석축: 남·북 반쪽마다 홍예 통로 폭이 다르다. ponytail: 통로 천장은 평평, 아치 곡선은 Studio에서
 	local W, Dp, H = D.wall.width, D.wall.depth, y(0)
 	local crown = y(D.arch.crown)
@@ -112,44 +100,21 @@ return function()
 	block("ParapetWest", -W / 2, H, -Dp / 2 + t, -W / 2 + t, top, Dp / 2 - t, STONE)
 	block("ParapetEast", W / 2 - t, H, -Dp / 2 + t, W / 2, top, Dp / 2 - t, STONE)
 
-	-- 문루 기단·기둥
+	-- 문루 기단 (기둥·창방·평방은 Chukbu)
 	local xs, zs = positions(D.lowerBays), positions(D.lowerSideBays)
 	local ux, uz = positions(D.upperBays), positions(D.upperSideBays)
 	local lx, lz = xs[#xs], zs[#zs] -- 하층 기둥열 반폭
 	local m = BASE_MARGIN
 	block("PavilionBase", -lx - m, H, -lz - m, lx + m, y(L.pavilionFloor), lz + m, STONE)
 
-	for i, x in xs do
-		for j, z in zs do
-			local edge = i == 1 or i == #xs or j == 1 or j == #zs
-			if edge then
-				column("LowerColumn", x, z, y(L.plinthTop), y(L.lowerColumnTop), LOWER_COLUMN_DIA)
-			else -- 가운데 줄 고주는 상층까지 올라간다
-				column("HighColumn", x, z, y(L.plinthTop), y(L.upperColumnTop), LOWER_COLUMN_DIA)
-			end
-		end
-	end
-	for i, x in ux do
-		for j, z in uz do
-			if i == 1 or i == #ux or j == 1 or j == #uz then
-				column("UpperColumn", x, z, y(L.upperFloor), y(L.upperColumnTop), UPPER_COLUMN_DIA)
-			end
-		end
-	end
-
 	-- 상층 벽·공포대: 기둥 위~처마선을 기둥열 크기 덩어리로 채운다. ponytail: 상층 공포·창호는 부재로 교체 예정
 	local px, pz = ux[#ux], uz[#uz]
-	-- 하층 평방: 기둥열 위 띠. 공포는 이 위에 Gongpo가 놓는다. ponytail: 창방·평방 단면은 축부 작업 때 부재로 교체
-	local pb, pw = y(L.lowerColumnTop + D.lowerPyeongbangHeight), 0.385 / 2 -- S4 088 평방 너비 385
-	for _, side in { { -lx - pw, -lz - pw, lx + pw, -lz + pw }, { -lx - pw, lz - pw, lx + pw, lz + pw }, { -lx - pw, -lz, -lx + pw, lz }, { lx - pw, -lz, lx + pw, lz } } do
-		block("LowerPyeongbang", side[1], y(L.lowerColumnTop), side[2], side[3], pb, side[4], WOOD)
-	end
 	block("UpperWall", -px, y(L.upperFloor), -pz, px, y(L.upperColumnTop), pz, WOOD)
 	block("UpperBrackets", -px, y(L.upperColumnTop), -pz, px, y(L.upperEave), pz, WOOD)
 
-	-- 하층 지붕: 처마선~상층 마루를 채운 판. ponytail: 경사·곡선 없음
+	-- 하층 지붕: 외목도리 위~상층 마루를 채운 판. ponytail: 경사·곡선 없음
 	local lo = D.eaveOverhang.lower
-	block("LowerRoof", -lx - lo, y(L.lowerEave), -lz - lo, lx + lo, y(L.upperFloor), lz + lo, ROOF)
+	block("LowerRoof", -lx - lo, y(L.lowerEave + 0.400), -lz - lo, lx + lo, y(L.upperFloor), lz + lo, ROOF) -- 0.400 = 외목도리 지름(S4 099)
 
 	-- 상층 지붕: 앞뒤 두 경사면(박공 형태). ponytail: 우진각 모서리·처마 곡선은 Studio 모델로
 	local hx, hz = ux[#ux] + D.eaveOverhang.upper, uz[#uz] + D.eaveOverhang.upper
