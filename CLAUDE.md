@@ -79,3 +79,8 @@ places/<이름>/        Place 하나 = Rojo 프로젝트 하나
 - Conventional Commits, scope는 Place 이름 또는 `core` (`feat(sungnyemun): ...`, `fix(core): ...`).
 - 작업은 새 브랜치(`feat/...`, `chore/...` 등)에서 커밋한다. main 직접 커밋·머지·푸시는 사용자가 main을 지정해 요청할 때만.
 - 커밋은 사용자 승인 후에만 한다. 사용자가 "알아서 커밋해줘", "커밋까지 자동 처리해줘"처럼 위임한 작업에서만 승인 없이 커밋한다.
+
+## 로컬 환경
+
+- 사용자는 herdr 터미널 안에서 작업한다. "패널 열어줘", "패널에서 ~ 실행해줘"는 `herdr` CLI로 처리한다 (문법은 `herdr --skill`, `herdr pane`).
+- 로컬 Rojo 서버는 패널에서 직접 띄우지 않고 pm2로 띄운다 (`~/github`에서 `pm2 start ecosystem.config.js --only roblox-<이름>`).
