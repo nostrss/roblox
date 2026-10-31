@@ -78,3 +78,4 @@ places/<이름>/        Place 하나 = Rojo 프로젝트 하나
 
 - Conventional Commits, scope는 Place 이름 또는 `core` (`feat(sungnyemun): ...`, `fix(core): ...`).
 - 작업은 새 브랜치(`feat/...`, `chore/...` 등)에서 커밋한다. main 직접 커밋·머지·푸시는 사용자가 main을 지정해 요청할 때만.
+- 커밋은 사용자 승인 후에만 한다. 사용자가 "알아서 커밋해줘", "커밋까지 자동 처리해줘"처럼 위임한 작업에서만 승인 없이 커밋한다.
