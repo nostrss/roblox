@@ -1,1 +1,2 @@
-print("Hello world, from server!")
+--!strict
+require(script.Greybox)()
