@@ -143,8 +143,13 @@ for _, kind in { "small", "large" } do
 	extrude(add(kind == "small" and "SoCheomcha" or "DaeCheomcha"), profile, G.thickness)
 end
 
-for i, profile in G.jegong do
-	extrude(add("Jegong" .. i), profile, G.thickness)
+local names = {}
+for name in G.jegong do
+	table.insert(names, name)
+end
+table.sort(names)
+for _, name in names do
+	extrude(add(name), G.jegong[name], G.thickness)
 end
 
 for _, e in meshes do

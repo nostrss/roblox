@@ -137,9 +137,13 @@ return function()
 		end
 	end
 
-	-- 공포대·상층 벽: 기둥 위~처마선을 기둥열 크기 덩어리로 채운다. ponytail: 공포·창호는 Studio 모델로
+	-- 상층 벽·공포대: 기둥 위~처마선을 기둥열 크기 덩어리로 채운다. ponytail: 상층 공포·창호는 부재로 교체 예정
 	local px, pz = ux[#ux], uz[#uz]
-	block("LowerBrackets", -lx, y(L.lowerColumnTop), -lz, lx, y(L.lowerEave), lz, WOOD)
+	-- 하층 평방: 기둥열 위 띠. 공포는 이 위에 Gongpo가 놓는다. ponytail: 창방·평방 단면은 축부 작업 때 부재로 교체
+	local pb, pw = y(L.lowerColumnTop + D.lowerPyeongbangHeight), 0.385 / 2 -- S4 088 평방 너비 385
+	for _, side in { { -lx - pw, -lz - pw, lx + pw, -lz + pw }, { -lx - pw, lz - pw, lx + pw, lz + pw }, { -lx - pw, -lz, -lx + pw, lz }, { lx - pw, -lz, lx + pw, lz } } do
+		block("LowerPyeongbang", side[1], y(L.lowerColumnTop), side[2], side[3], pb, side[4], WOOD)
+	end
 	block("UpperWall", -px, y(L.upperFloor), -pz, px, y(L.upperColumnTop), pz, WOOD)
 	block("UpperBrackets", -px, y(L.upperColumnTop), -pz, px, y(L.upperEave), pz, WOOD)
 
