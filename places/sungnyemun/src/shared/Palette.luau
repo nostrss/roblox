@@ -21,6 +21,7 @@ local paint: { [string]: Paint } = {
 	panseok = { material = Enum.Material.Granite, color = Color3.fromRGB(170, 166, 158) }, -- 홍예 통로 바닥 판석
 	soe = { material = Enum.Material.Metal, color = Color3.fromRGB(58, 54, 52) }, -- 성문 철엽 (S7 p.564 철엽·광두정)
 	jeondol = { material = Enum.Material.Concrete, color = Color3.fromRGB(118, 118, 115) }, -- 여장 전돌 회색 (S7 p.200). Brick 재질은 무늬가 붉어 회색 전돌로 안 보임 → 사진 필요
+	deulgireum = { material = Enum.Material.Wood, color = Color3.fromRGB(150, 112, 74) }, -- 들기름칠 소나무. 근사: 색 자료 없음
 	gidan = { material = Enum.Material.Granite, color = Color3.fromRGB(160, 156, 150) }, -- 문루 기단
 	-- 성곽: 신재 포천석 담회색에 약간 담홍색 (S7 p.469·497)
 	seongdol = { material = Enum.Material.Cobblestone, color = Color3.fromRGB(184, 174, 166) }, -- 체성 면석·단부
@@ -39,7 +40,8 @@ local paint: { [string]: Paint } = {
 -- 부재 이름(Part.Name) → 칠. 없는 이름은 뇌록 (S7: 목부 일반이 뇌록 주바탕)
 local byName: { [string]: string } = {
 	Pyeongju = "seokganju", Uju = "seokganju", Goju = "seokganju", GwiGoju = "seokganju", UpperPyeongju = "seokganju",
-	UpperWall = "seokganju", -- 상층 판벽 덩어리 (Greybox)
+	-- 문루 마루 (Munru): 귀틀·장선·동바리·마루널은 들기름칠 (S4 181~185 부재표 마감)
+	JangGwiteul = "deulgireum", DongGwiteul = "deulgireum", Jangseon = "deulgireum", Dongbari = "deulgireum", Maruneol = "deulgireum",
 	Gaepan = "yeonbaek",
 	LowerJibungFront = "giwa", LowerJibungSide = "giwa", UpperJibungFront = "giwa", UpperJibungSide = "giwa",
 	MaruCap = "giwa", Sumaksae = "giwa", Ammaksae = "giwa",

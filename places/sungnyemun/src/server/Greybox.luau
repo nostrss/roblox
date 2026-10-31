@@ -67,14 +67,14 @@ return function()
 
 	-- 문루 기단 (기둥·창방·평방은 Chukbu)
 	local xs, zs = positions(D.lowerBays), positions(D.lowerSideBays)
-	local ux, uz = positions(D.upperBays), positions(D.upperSideBays)
 	local lx, lz = xs[#xs], zs[#zs] -- 하층 기둥열 반폭
 	local m = BASE_MARGIN
-	block("PavilionBase", -lx - m, H, -lz - m, lx + m, y(L.pavilionFloor), lz + m)
-
-	-- 상층 벽: 마루~기둥 상을 기둥열 크기 덩어리로 채운다. ponytail: 창호·판벽은 D 단계에서 부재로 교체
-	local px, pz = ux[#ux], uz[#uz]
-	block("UpperWall", -px, y(L.upperFloor), -pz, px, y(L.upperColumnTop), pz)
+	-- 기둥열 안쪽은 마루(Munru)가 육축 윗면에 앉으므로 비우고, 기둥열 밖 둘레만 채운다
+	local top = y(L.pavilionFloor)
+	block("PavilionBase", -lx - m, H, -lz - m, lx + m, top, -lz)
+	block("PavilionBase", -lx - m, H, lz, lx + m, top, lz + m)
+	block("PavilionBase", -lx - m, H, -lz, -lx, top, lz)
+	block("PavilionBase", lx, H, -lz, lx + m, top, lz)
 
 	-- 정면 광장 시작 위치: 석축 남측면에서 35 m, 문루를 바라본다(-Z). 건물 자리로 함께 돌아 남서 광장에 놓인다
 	local spawnPoint = Instance.new("SpawnLocation")
