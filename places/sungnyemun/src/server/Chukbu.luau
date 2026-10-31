@@ -1,6 +1,6 @@
 --!strict
 -- 축부(기둥·창방·평방·대보·충량·외목도리)를 Part로 짓는다. 단면이 일정한 부재라 메시 없이 Part로 충분하다.
--- 원점 = 문루 중심 지면, 남 = +Z, 동 = +X. ponytail: 초석·장화반·보머리 삼분두, 상층 주심도리·종보·대공은 아직
+-- 원점 = 문루 중심 지면, 건물 축(정면 = +Z, 정면 기준 동쪽 = +X). ponytail: 초석·장화반·보머리 삼분두, 상층 주심도리·종보·대공은 아직
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Units = require(ReplicatedStorage.Core.Units)

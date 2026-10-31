@@ -3,7 +3,7 @@
 -- 서까래 밑면은 안쪽 받침 도리와 외목도리 윗면에 닿고(Chukbu에서 짓는 값), 앙곡만큼 외목도리 닿는 점을 축으로 끝을 들어 올린다.
 -- 모서리: 추녀(밑면을 도리 대각선 교차점에 얹음)·사래(추녀 윗면 휜 구간에 얹음)·갈모산방, 선자연은 부채 중심(안쪽 받침 도리 모서리)에서 처마선으로.
 -- 마감: 서까래·부연 윗면에 개판, 끝에 초매기·이매기(처마선을 따라 토막으로), 공포 출목 장여 사이에 순각판.
--- 원점 = 문루 중심 지면, 남 = +Z, 동 = +X.
+-- 원점 = 문루 중심 지면, 건물 축(정면 = +Z, 정면 기준 동쪽 = +X).
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

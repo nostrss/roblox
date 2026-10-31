@@ -1,6 +1,6 @@
 --!strict
 -- 숭례문 회색 박스: Dimensions 실측값으로 덩어리 형태를 세운다. 지붕은 처마·지붕 곡면 단계(Cheoma)에서 부재로 짓는다.
--- 원점 = 문루 중심의 지면, 정면(남) = +Z, 동 = +X.
+-- 원점 = 문루 중심의 지면, 건물 축(정면 = +Z). 실제 방위로는 init.server가 건물 자리로 돌린다.
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -110,11 +110,11 @@ return function()
 	local px, pz = ux[#ux], uz[#uz]
 	block("UpperWall", -px, y(L.upperFloor), -pz, px, y(L.upperColumnTop), pz, WOOD)
 
-	-- 남쪽 광장 시작 위치
+	-- 정면 광장 시작 위치: 석축 앞면에서 35 m, 문루를 바라본다(-Z). 건물 자리로 함께 돌아 남서 광장에 놓인다
 	local spawnPoint = Instance.new("SpawnLocation")
 	spawnPoint.Anchored = true
 	spawnPoint.Size = Vector3.new(12, 1, 12)
-	spawnPoint.CFrame = CFrame.new(0, 0.5, s(Dp / 2 + 20))
+	spawnPoint.CFrame = CFrame.new(0, 0.5, s(Dp / 2 + 35))
 	spawnPoint.Parent = model
 
 	CollectionService:AddTag(model, Tags.GREYBOX)
