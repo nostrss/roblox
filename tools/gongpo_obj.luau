@@ -155,6 +155,9 @@ end
 
 extrude(add("Unggong"), G.unggong, G.thickness)
 extrude(add("Buyeon"), C.buyeon.profile, C.buyeon.width) -- 처마 부연 (Cheoma.luau)
+for _, name in { "Chunyeo", "UpperChunyeo", "Sarae", "Galmo" } do -- 처마 모서리. 두께는 배치 코드가 Size로 정한다
+	extrude(add(name), C.profiles[name], 0.2)
+end
 
 for _, e in meshes do
 	local lo, hi = { math.huge, math.huge, math.huge }, { -math.huge, -math.huge, -math.huge }
