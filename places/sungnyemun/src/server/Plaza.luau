@@ -53,22 +53,7 @@ local function triangle(name: string, a: Vector3, b: Vector3, c: Vector3)
 	end
 end
 
--- 연석선 꼭짓점 i를 문루 중심에서 바깥으로 r m 늘인 점 (건물 축 x, z)
-local function radial(i: number, dr: number): (number, number)
-	local q = Plaza.curb[(i - 1) % #Plaza.curb + 1]
-	local len = math.sqrt(q[1] ^ 2 + q[2] ^ 2)
-	return q[1] * (len + dr) / len, q[2] * (len + dr) / len
-end
-
--- 꼭짓점 i의 맞은편 연석 (자료에 잴 방향이 있으면 그 방향, 없으면 바깥으로)
-local function roadFar(i: number): (number, number)
-	local q = Plaza.curb[(i - 1) % #Plaza.curb + 1]
-	local dir = q[4] :: Vector3?
-	if dir then
-		return q[1] + dir.X * q[3], q[2] + dir.Z * q[3]
-	end
-	return radial(i, q[3])
-end
+local radial, roadFar = Plaza.radial, Plaza.roadFar
 
 -- 고리가 겹치지 않으려면 맞은편 연석 점들이 문루 중심을 한 바퀴 차례로 돌아야 한다
 do
@@ -83,16 +68,21 @@ do
 	assert(math.abs(turn - 2 * math.pi) < 1e-3, "맞은편 연석 점이 한 바퀴를 돌지 않는다")
 end
 
--- 두 고리 사이를 한 면(높이 함수 h)으로 채운다. inner·outer(i)는 꼭짓점 i의 (x, z)
-local function ring(name: string, inner: (number) -> (number, number), outer: (number) -> (number, number), h: (number) -> number)
-	local function pt(f: (number) -> (number, number), i: number): Vector3
-		local x, z = f(i)
-		return world(x, h(z), z)
+-- 건물 축 네 점 (x, z) a→b→c→d(둘레 차례)를 한 면(높이 함수 h)으로 채운다
+local function quad(name: string, h: (number) -> number, a: { number }, b: { number }, c: { number }, d: { number })
+	local function pt(p: { number }): Vector3
+		return world(p[1], h(p[2]), p[2])
 	end
+	triangle(name, pt(a), pt(b), pt(c))
+	triangle(name, pt(a), pt(c), pt(d))
+end
+
+-- 두 고리 사이를 한 면(높이 함수 h)으로 채운다. inner·outer(i)는 꼭짓점 i의 (x, z). skip 번째 칸은 비운다
+local function ring(name: string, inner: (number) -> (number, number), outer: (number) -> (number, number), h: (number) -> number, skip: number?)
 	for i = 1, #Plaza.curb do
-		local a, b, c, d = pt(inner, i), pt(inner, i + 1), pt(outer, i), pt(outer, i + 1)
-		triangle(name, a, c, d)
-		triangle(name, a, d, b)
+		if i ~= skip then
+			quad(name, h, { inner(i) }, { outer(i) }, { outer(i + 1) }, { inner(i + 1) })
+		end
 	end
 end
 
@@ -157,6 +147,7 @@ return function()
 	end
 	model = Instance.new("Model")
 	model.Name = "Gwangjang"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 땅 끝(400 m)까지의 바닥이 실루엣 밑에서 스트리밍으로 빠지지 않게
 	local band, n = Plaza.bandWidth, #Plaza.curb
 
 	-- 보도 띠(연석 안쪽), 도로, 도로 맞은편 보도·블록 바닥
@@ -168,11 +159,40 @@ return function()
 	ring("Asphalt", function(i)
 		return radial(i, 0)
 	end, roadFar, Plaza.road)
+	-- 맞은편 보도·블록 바닥은 땅 끝(farRadius)까지. 남쪽 끝 점(n)과 W1(1) 칸은 세종대로 남쪽 연장이 대신 채운다
 	ring("Bodo", roadFar, function(i)
-		local x, z = roadFar(i)
+		local k = (i - 1) % n + 1
+		local x, z = roadFar(k)
+		if k == 1 or k == n then
+			return Plaza.toEdge(x, z) -- 연장 도로·보도 가장자리와 맞춘다
+		end
 		local len = math.sqrt(x * x + z * z)
 		return x * Plaza.farRadius / len, z * Plaza.farRadius / len
-	end, Plaza.sidewalk)
+	end, Plaza.sidewalk, n)
+
+	-- 세종대로 남쪽 연장: 광장 남서 끝(Z≈100)에서 끊기지 않고 땅 끝까지 간다. 동쪽 보도는 남쪽 끝 점~W1 사이 폭
+	local w1, w1far, south = { Plaza.curb[1][1], Plaza.curb[1][2] }, { roadFar(1) }, { roadFar(n) }
+	quad("Asphalt", Plaza.road, w1, w1far, { Plaza.toEdge(w1far[1], w1far[2]) }, { Plaza.toEdge(w1[1], w1[2]) })
+	quad("Bodo", Plaza.sidewalk, south, w1, { Plaza.toEdge(w1[1], w1[2]) }, { Plaza.toEdge(south[1], south[2]) })
+
+	-- 보행 경계: 맞은편 보도 바깥선을 따라 보이지 않는 벽. 그 밖(도로 연장·실루엣)으로는 못 간다
+	for i = 1, n do
+		local x0, z0 = Plaza.boundary(i)
+		local x1, z1 = Plaza.boundary(i + 1)
+		local a, b = world(x0, 0, z0), world(x1, 0, z1)
+		local g0, g1 = Plaza.sidewalk(z0), Plaza.sidewalk(z1)
+		local bottom, top = math.min(g0, g1) - 1, math.max(g0, g1) + Plaza.walkHeight
+		local along = b - a
+		local p = Instance.new("Part")
+		p.Name = "Gyeonggye"
+		setup(p, true)
+		p.Transparency = 1
+		p.CastShadow = false
+		p.Size = Vector3.new(0.3 * S, (top - bottom) * S, along.Magnitude + 0.3 * S)
+		local mid = (a + b) / 2
+		p.CFrame = CFrame.lookAt(mid, mid + along) + Vector3.new(0, (bottom + top) / 2 * S, 0)
+		p.Parent = model
+	end
 
 	-- 광장 가장자리 옹벽: 보도 띠 안쪽 선을 따라 광장 바닥에서 보도 높이까지
 	for i = 1, n do
