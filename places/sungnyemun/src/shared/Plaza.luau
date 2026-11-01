@@ -7,6 +7,9 @@
 local Plaza = {}
 
 local W = Vector3.new(-1, 0, 0) -- 세종대로 폭을 재는 방향 (건물 축 −X)
+-- 소월로 폭을 재는 방향: E1→E6 연석 전체 방향(40, 63)에 수직. 문루 중심에서 바깥(반지름 방향)으로 재면
+-- E3–E6에서 반지름이 연석과 거의 나란해 차도가 4 m 남짓으로 좁아졌다 (도로 차량 차로 검사에서 드러남, 2026-11-01)
+local E = Vector3.new(63, 0, -40).Unit
 
 -- 광장 바깥 연석선, 서쪽 남단에서 북쪽을 돌아 동쪽 → 남쪽 경계(건물 쪽 보도)로 닫는다.
 -- { X, Z, 맞은편 연석까지 도로 폭, 잴 방향 } — 방향이 없으면 문루 중심에서 바깥으로 뻗는 방향.
@@ -16,7 +19,7 @@ Plaza.curb = {
 	{ 0, 100, 32, W }, { -3, 90, 32, W }, { -6, 72, 33, W }, { -9, 62, 35, W }, { -14, 50, 38, W }, { -19, 38, 36, W }, -- W1–W6 세종대로
 	{ -23, 28, 34, W }, { -25, 15, 32, W }, { -25.5, 5, 31.5, W }, { -26.5, -5, 31, W }, { -28, -15, 32, W }, { -25.5, -25, 36 }, -- W7–W12
 	{ -15, -39, 60 }, { 0, -44, 60 }, { 15, -39, 50 }, { 30, -27, 25 }, -- N1–N4 숭례문 교차로
-	{ 45, -8, 16.25 }, { 55, 15, 16.25 }, { 60, 27, 16.25 }, { 67, 37, 16.25 }, { 75, 45, 16.25 }, { 85, 55, 16.25 }, -- E1–E6 소월로
+	{ 45, -8, 16.25, E }, { 55, 15, 16.25, E }, { 60, 27, 16.25, E }, { 67, 37, 16.25, E }, { 75, 45, 16.25, E }, { 85, 55, 16.25, E }, -- E1–E6 소월로
 	{ 85, 62, 0 }, { 75, 80, 0 }, { 57, 94, 0 }, { 28, 100, 0 }, { 5, 102, 0 }, -- 남쪽: 도로 없이 보도가 건물 블록에 붙는다
 }
 
@@ -108,5 +111,43 @@ Plaza.zones = {
 	{ z0 = -6, z1 = 6, kind = "Masato", x0 = -math.huge, x1 = math.huge }, -- 근사: 육축 양옆(유구 노출 구역 자리)도 흙
 	{ z0 = -37, z1 = -6, kind = "Masato", x0 = -4, x1 = 13 },
 }
+
+-- 점 (x, z)가 다각형 poly({ {x, z}, ... }) 안인가 (건물 축)
+function Plaza.inside(x: number, z: number, poly: { { number } }): boolean
+	local c = false
+	for i, p in poly do
+		local q = poly[i % #poly + 1]
+		if (p[2] > z) ~= (q[2] > z) and x < p[1] + (q[1] - p[1]) * (z - p[2]) / (q[2] - p[2]) then
+			c = not c
+		end
+	end
+	return c
+end
+
+local curbPoly, farPoly, boundaryPoly, southRoad = {}, {}, {}, {}
+for i, q in Plaza.curb do
+	curbPoly[i] = { q[1], q[2] }
+	farPoly[i] = { Plaza.roadFar(i) }
+	boundaryPoly[i] = { Plaza.boundary(i) }
+end
+do
+	local w1, w1far = curbPoly[1], farPoly[1]
+	southRoad = { w1, w1far, { Plaza.toEdge(w1far[1], w1far[2]) }, { Plaza.toEdge(w1[1], w1[2]) } }
+end
+
+-- 점 (x, z)가 차도(아스팔트) 위인가: 연석과 맞은편 연석 사이 고리, 또는 세종대로 남쪽 연장
+function Plaza.onRoad(x: number, z: number): boolean
+	return (Plaza.inside(x, z, farPoly) and not Plaza.inside(x, z, curbPoly)) or Plaza.inside(x, z, southRoad)
+end
+
+-- 점 (x, z)가 연석 안(광장 바닥·안쪽 보도 띠)인가
+function Plaza.plazaSide(x: number, z: number): boolean
+	return Plaza.inside(x, z, curbPoly)
+end
+
+-- 점 (x, z)가 보행 경계 안인가 (방문자가 걸어 가 볼 수 있는 곳)
+function Plaza.walkable(x: number, z: number): boolean
+	return Plaza.inside(x, z, boundaryPoly)
+end
 
 return Plaza
