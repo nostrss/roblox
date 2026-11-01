@@ -22,7 +22,48 @@ Plaza.curb = {
 
 Plaza.bandWidth = 4 -- 근사: 연석 안쪽 포장 띠(보도·자전거길) 폭. S13 3–7 m
 Plaza.curbHeight = 0.15 -- 근사: 보도와 차도 단차 (사용자 임의값 2026-11-01)
-Plaza.farRadius = 230 -- 근사: 도로 맞은편 보도·블록 바닥을 이 반지름까지 깐다 (주변 건물 실루엣은 나중)
+Plaza.farRadius = 400 -- 근사: 도로 맞은편 보도·블록 바닥을 이 반지름까지 깐다. 주변 건물 실루엣(반지름 약 250 m)보다 넉넉히 넓게
+
+-- 세종대로 남쪽 연장: W1(1번)의 도로와 남쪽 끝 점(마지막 번)~W1 사이 보도를 이 방향(건물 축)으로 땅 끝까지 잇는다.
+-- S12 세종대로 두 차로군 중심선(way 218926711, 585341901) 건물 축 Z 110→290 구간 방향. 직선으로 둔다 (근사: 실제는 서울역 쪽으로 살짝 휜다)
+Plaza.sejongSouth = Vector3.new(0.13, 0, 1).Unit
+
+-- 연석선 꼭짓점 i를 문루 중심에서 바깥으로 dr m 늘인 점 (건물 축 x, z)
+function Plaza.radial(i: number, dr: number): (number, number)
+	local q = Plaza.curb[(i - 1) % #Plaza.curb + 1]
+	local len = math.sqrt(q[1] ^ 2 + q[2] ^ 2)
+	return q[1] * (len + dr) / len, q[2] * (len + dr) / len
+end
+
+-- 꼭짓점 i의 맞은편 연석 (자료에 잴 방향이 있으면 그 방향, 없으면 바깥으로). 이 점들을 이은 다각형 안이 광장+도로다
+function Plaza.roadFar(i: number): (number, number)
+	local q = Plaza.curb[(i - 1) % #Plaza.curb + 1]
+	local dir = q[4] :: Vector3?
+	if dir then
+		return q[1] + dir.X * q[3], q[2] + dir.Z * q[3]
+	end
+	return Plaza.radial(i, q[3])
+end
+
+-- 보행 경계: 맞은편 연석 점을 바깥으로 이만큼(m) 늘인 선. 방문자는 도로를 건너 맞은편 보도까지만 간다 (사용자 결정 2026-11-01).
+-- 근사: 맞은편 보도 폭. 주변 건물 실루엣은 맞은편 연석에서 2 m 이상 떨어져 있어(Silhouette 생성 조건) 이 선 밖에 있다
+Plaza.walkMargin = 2
+Plaza.walkHeight = 6 -- 보행 경계 벽 높이 (점프로 넘지 못할 만큼)
+
+-- 보행 경계 꼭짓점 i (건물 축 x, z). 세종대로 남쪽 연장·북쪽 도로도 이 선에서 끊긴다
+function Plaza.boundary(i: number): (number, number)
+	local x, z = Plaza.roadFar(i)
+	local len = math.sqrt(x * x + z * z)
+	return x * (len + Plaza.walkMargin) / len, z * (len + Plaza.walkMargin) / len
+end
+
+-- 점 (x, z)에서 세종대로 남쪽 방향으로 땅 끝(farRadius)까지 간 점
+function Plaza.toEdge(x: number, z: number): (number, number)
+	local d = Plaza.sejongSouth
+	local pd = x * d.X + z * d.Z
+	local t = -pd + math.sqrt(pd * pd - (x * x + z * z) + Plaza.farRadius ^ 2)
+	return x + d.X * t, z + d.Z * t
+end
 
 -- 횡단보도 중심선 양 끝 (S13 판독). 폭 근사 5 m (S13 줄무늬 길이 5–6 m)
 Plaza.crosswalks = {

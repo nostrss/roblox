@@ -12,6 +12,7 @@ require(script.Jibung)() -- Cheoma 부재의 세계 좌표를 읽으므로 돌�
 require(script.Hyeonpan)()
 require(script.Seonggwak)()
 require(script.Plaza)() -- 광장·도로는 세계 좌표로 바로 놓는다 (아래 목록에 넣지 않는다)
+require(script.Silhouette)() -- 주변 건물 실루엣도 세계 좌표 그대로
 
 -- 건물 자리(ADR 0004): 자기 축으로 지은 루트 Model을 통째로 돌려 놓는다 (Shared.Site).
 
