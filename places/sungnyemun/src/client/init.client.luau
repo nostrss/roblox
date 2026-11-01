@@ -1,10 +1,13 @@
 --!strict
--- 스폰 직후 카메라를 문루 가운데 높이로 한 번 올려다보게 한다. 이후 조작은 기본 카메라 그대로.
+-- 시간대(하늘·빛·야간 조명)를 켜고, 스폰 직후 카메라를 문루 가운데 높이로 한 번 올려다보게 한다. 이후 조작은 기본 카메라 그대로.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Units = require(ReplicatedStorage.Core.Units)
 local D = require(ReplicatedStorage.Shared.Dimensions)
+local TimeOfDay = require(ReplicatedStorage.Core.TimeOfDay)
+
+TimeOfDay.start(require(ReplicatedStorage.Shared.Looks)) -- 실제 서울 시각 + 지금/노을/밤 고르기, 야간 조명
 
 local target = Units.studs(1) * (D.site.position + Vector3.new(0, (D.level.ridgeTop - D.level.ground) / 2, 0))
 
