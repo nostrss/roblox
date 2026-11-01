@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 
+local Figures = require(script.Parent.Figures)
 local Split = require(script.Parent.Split)
 local Tags = require(script.Parent.Tags)
 local text = require(script.Parent.I18n).text
@@ -31,6 +32,7 @@ export type Config = {
 	blockFrom: number, -- 문 닫힘 정도(0 열림 ~ 1 닫힘)가 이 값 이상이면 막이를 켠다
 	button: string, -- 시작 버튼 다국어 키
 	buttonBusy: string, -- 진행 중 버튼 다국어 키
+	figures: Figures.Config?, -- 회차를 따라 움직이는 인물과 기물 (core Figures)
 }
 
 local REMOTE = "Ceremony"
@@ -293,6 +295,8 @@ function Ceremony.start(config: Config)
 		end)
 	end
 
+	local setFigures = if config.figures then Figures.start(config.figures) else nil
+
 	task.spawn(function() -- 서버가 건물을 다 지은 뒤에 만들므로 기다리는 동안 다른 클라이언트 준비를 막지 않게
 		local remote = ReplicatedStorage:WaitForChild(REMOTE) :: RemoteEvent
 		local running = false
@@ -325,6 +329,9 @@ function Ceremony.start(config: Config)
 				for _, p in CollectionService:GetTagged(Tags.GATE_LEAF) do
 					swing(p :: BasePart, closed)
 				end
+				if setFigures then
+					setFigures(t)
+				end
 			end
 			if now ~= running then
 				running = now
@@ -332,6 +339,9 @@ function Ceremony.start(config: Config)
 				if not now then
 					for _, p in CollectionService:GetTagged(Tags.GATE_LEAF) do
 						swing(p :: BasePart, 0)
+					end
+					if setFigures then
+						setFigures(math.huge)
 					end
 				end
 			end
