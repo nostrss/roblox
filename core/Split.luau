@@ -64,7 +64,7 @@ end
 
 -- tag가 붙은 표식(BasePart)에 프롬프트를 달고 분해·조립을 돌린다. collect는 처음 누를 때 한 번, 누른 표식과 함께 부른다
 function Split.start(settings: Settings, tag: string, collect: (marker: BasePart) -> Plan)
-	local I18n = require(script.Parent.I18n)
+	local I18n = require(script.Parent.I18n).text
 	local S = Units.studs(1)
 
 	local gs: { Group }? = nil

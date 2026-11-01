@@ -11,7 +11,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 
 local Tags = require(script.Parent.Tags)
-local text = require(script.Parent.I18n)
+local text = require(script.Parent.I18n).text
 
 -- 효과 클래스 이름(Atmosphere, ColorCorrectionEffect, BloomEffect, SunRaysEffect, Clouds, 또는 "Lighting" 자체) → 속성 → 값.
 -- 트윈되는 값(숫자·Color3)만 쓴다. 노을·밤에 적지 않은 속성은 낮(Studio) 값으로 돌아간다
