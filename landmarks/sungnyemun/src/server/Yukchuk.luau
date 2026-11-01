@@ -229,7 +229,17 @@ return function()
 			return p
 		end
 		leaf("Seongmun", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, -G.thickness / 2), Vector3.new(G.leafWidth, G.leafHeight, G.thickness))
-		leaf("Cheoryeop", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, G.plate / 2), Vector3.new(G.leafWidth, G.leafHeight, G.plate))
+		local plate = leaf("Cheoryeop", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, G.plate / 2), Vector3.new(G.leafWidth, G.leafHeight, G.plate))
+		if G.tile.texture ~= "" then
+			-- 철판·광두정 타일: 바깥면(닫혔을 때 남쪽)에 파트 하나로 반복. 이음이 양 경첩에서 대칭이 되게 밀어 놓는다
+			local t = Instance.new("Texture")
+			t.Texture = G.tile.texture
+			t.Face = Enum.NormalId.Back
+			t.StudsPerTileU = Units.studs(G.tile.width)
+			t.StudsPerTileV = Units.studs(G.tile.height)
+			t.OffsetStudsU = Units.studs(if sx < 0 then G.tile.hingeSeam else G.leafWidth - G.tile.hingeSeam)
+			t.Parent = plate
+		end
 		local x0, x1 = math.min(sx * G.leafWidth, sx * P.width / 2), math.max(sx * G.leafWidth, sx * P.width / 2)
 		local wall = block("PanmunWall", x0, 0, dz - G.leafWidth, x1, G.leafHeight, dz) :: BasePart
 		wall.Transparency = 1

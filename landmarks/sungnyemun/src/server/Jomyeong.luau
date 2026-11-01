@@ -1,6 +1,6 @@
 --!strict
 -- 숭례문 야간 조명 기구: 육축·문루 투광등(SpotLight), 처마 밑 SurfaceLight, 광장 가로등(PointLight). 광원 14개 (모바일).
--- 그리고 홍예 통로 빛 둘: 낮 조명(Tags.DAY_LIGHT)과 야간 조명. 한 번에 하나만 켜진다.
+-- 그리고 홍예 통로 빛·판문 빛 각 둘: 낮 조명(Tags.DAY_LIGHT)과 야간 조명. 한 번에 하나만 켜진다.
 -- 첫 자리는 S15 사진(눈으로 참고)을 보고 대충 잡았다: 육축 면은 바닥에서 올려 비추고, 처마 밑 공포대가 밝고, 지붕 기와는 어둡다.
 -- 자리·방향·밝기는 Studio에서 다듬는다 — 켜고 끄기는 태그(Tags.NIGHT_LIGHT)로 하므로 옮기거나 더한 기구도 태그만 붙이면 된다.
 -- 여기 적은 Brightness가 켜진(밤) 밝기다. 클라이언트(core TimeOfDay)가 낮에는 0으로 내린다.
@@ -110,6 +110,14 @@ local TONGNO = {
 	lights = { { Tags.DAY_LIGHT, Color3.new(1, 1, 1), 2 }, { Tags.NIGHT_LIGHT, WARM, 1.2 } }, -- { 태그, 색, 밝기 }
 }
 
+-- 판문 빛: 판문이 있는 남측 홍예 안은 해도 투광등도 닿지 않아 닫힌 문이 까맣다. 통로 빛처럼 낮·밤 하나씩, 한 번에 하나만 켜진다. 근사: 값은 Play에서 눈으로 맞췄다
+local PANMUN = {
+	out = 1.6, -- 판문 자리에서 남쪽 m
+	height = 3.5, -- 지면 위 m
+	range = 20, -- 스터드
+	lights = { { Tags.DAY_LIGHT, Color3.new(1, 1, 1), 0.9 }, { Tags.NIGHT_LIGHT, WARM, 0.8 } }, -- { 태그, 색, 밝기 }
+}
+
 local model: Model
 
 local function part(name: string, size: Vector3, cf: CFrame, color: Color3): Part
@@ -197,6 +205,18 @@ return function()
 		light.Color = t[2] :: Color3
 		light.Brightness = t[3] :: number
 		light.Range = TONGNO.range
+		light.Shadows = true
+		light.Parent = p
+		CollectionService:AddTag(p, t[1] :: string)
+	end
+
+	for _, t in PANMUN.lights do
+		local p = part("PanmunJomyeong", Vector3.new(0.05, 0.05, 0.05), CFrame.new(Vector3.new(0, PANMUN.height, doorZ + PANMUN.out) * S), dark)
+		p.Transparency = 1
+		local light = Instance.new("PointLight")
+		light.Color = t[2] :: Color3
+		light.Brightness = t[3] :: number
+		light.Range = PANMUN.range
 		light.Shadows = true
 		light.Parent = p
 		CollectionService:AddTag(p, t[1] :: string)

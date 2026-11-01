@@ -20,7 +20,9 @@ local paint: { [string]: Paint } = {
 	seokchuk = { material = Enum.Material.Granite, color = Color3.fromRGB(176, 172, 165) }, -- 육축 몸 (포천석 담회색, S7 p.469)
 	myeonseok = { material = Enum.Material.Granite, color = Color3.fromRGB(196, 190, 182) }, -- 육축 면석·홍예석·계단석 (돌마다 Yukchuk이 명도를 흔든다)
 	panseok = { material = Enum.Material.Granite, color = Color3.fromRGB(170, 166, 158) }, -- 홍예 통로 바닥 판석
-	soe = { material = Enum.Material.Metal, color = Color3.fromRGB(58, 54, 52) }, -- 성문 철엽 (S7 p.564 철엽·광두정)
+	-- 성문 철엽 (S7 p.564 철엽·광두정). 녹슨 적갈색: 볕이 든 사진 S27 passage(판면 그늘 #58362C ~ 밝은 곳 #7E5C52, 색상 약 14°)를 눈으로 재서 가운데로 골랐다. 근사. 전 값 #3A3634 Metal.
+	-- Metal은 직사광 없는 홍예 안에서 까맣게 나와(Play 확인) Plastic으로 바꿨다. 판 무늬는 Shared.Yukchuk gate.tile
+	soe = { material = PAINTED, color = Color3.fromHex("#6B4A3F") },
 	jeondol = { material = Enum.Material.Concrete, color = Color3.fromRGB(118, 118, 115) }, -- 여장 전돌 회색 (S7 p.200). Brick 재질은 무늬가 붉어 회색 전돌로 안 보임 → 사진 필요
 	deulgireum = { material = Enum.Material.Wood, color = Color3.fromRGB(150, 112, 74) }, -- 들기름칠 소나무. 근사: 색 자료 없음
 	gidan = { material = Enum.Material.Granite, color = Color3.fromRGB(160, 156, 150) }, -- 문루 기단
