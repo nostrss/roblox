@@ -1,14 +1,22 @@
 --!strict
 -- 숭례문 둘레 도로(세종대로·소월로)의 차로 자리. 단위 m, 좌표는 건물 축 (x, 0, z), 출처 ID는 SOURCES.md.
 -- 도로 하나 = 단면 줄. 단면 = { 안쪽 끝 a, 바깥쪽 끝 b } 두 점이고, 차로 안 자리는 a→b 비율 t(0~1)로 적는다.
--- 도로 차량(Shared.Streets)이 이 t로 달린다 — 차가 늘 같은 차로 위를 달린다.
+-- 도로 차량(Shared.Streets)과 차선 도색(server Chaseon)이 같은 단면·t를 쓴다 — 차가 늘 칠한 차로 안을 달린다.
 -- a는 늘 광장 쪽 연석. 우측 통행이라 차로 t는 진행 방향 오른쪽 절반에서 고른다.
 local Plaza = require(script.Parent.Plaza)
 
 export type Road = {
 	stations: { { Vector3 } }, -- { a, b }
 	lanes: { [string]: { t: number, dir: number } }, -- 차가 달리는 차로 가운데. dir 1 = 단면 순서대로, −1 = 거꾸로
+	marked: { number }, -- 차선을 칠하는 단면 범위 { 처음, 끝 } (보행 경계 밖 연장·교차로는 칠하지 않는다)
+	lines: { Line },
 }
+
+-- 차선 하나. kind: "Solid" 흰 실선(가장자리), "Dashed" 흰 점선(차로 사이), "Yellow" 노란 겹선(중앙선), "Blue" 파란 실선(버스전용차로 경계).
+-- busEnd가 있으면 건물 축 Z가 그보다 큰(남쪽) 곳은 버스전용차로가 끝나 흰 점선이 된다
+export type Line = { t: number, kind: string, busEnd: number? }
+
+local EDGE = 0.3 -- 가장자리 실선을 연석에서 띄우는 거리 (m)
 
 local Lanes = {}
 
@@ -55,7 +63,19 @@ do
 			busNorth = { t = 22 / 32.5, dir = 1 },
 			busSouth = { t = 25 / 32.5, dir = -1 },
 		},
+		marked = { 2, 14 }, -- 남쪽 연장 150 m ~ W12
+		lines = {
+			{ t = EDGE / 32.5, kind = "Solid" },
+			{ t = 1 - EDGE / 32.5, kind = "Solid" },
+			{ t = 23.5 / 32.5, kind = "Yellow" }, -- 두 버스전용차로 사이
+			{ t = 20.5 / 32.5, kind = "Blue", busEnd = 48 }, -- plaza-notes 2-1: 중앙버스전용차로는 Z≈48에서 끝난다
+			{ t = 26.5 / 32.5, kind = "Blue", busEnd = 48 },
+			{ t = 29.5 / 32.5, kind = "Dashed" },
+		},
 	} :: Road
+	for k = 1, 5 do -- 북행 6차로 사이
+		table.insert(Lanes.sejong.lines, { t = 20.5 / 32.5 * k / 6, kind = "Dashed" })
+	end
 end
 
 -- 소월로: 남동쪽 연장 → 광장 동쪽 E6–E1 → N4 → 교차로 북동쪽 남대문로 가지(횡단보도 C2) → 북동쪽 연장. a = 광장 쪽 연석.
@@ -73,6 +93,15 @@ do
 		lanes = {
 			inbound = { t = 0.7, dir = 1 }, -- 교차로로 들어오는 바깥쪽 첫 차로 (좌회전 차로 옆)
 			outbound = { t = 0.3, dir = -1 },
+		},
+		marked = { 2, 7 }, -- E6 ~ E1
+		lines = {
+			{ t = EDGE / 16.25, kind = "Solid" },
+			{ t = 1 - EDGE / 16.25, kind = "Solid" },
+			{ t = 0.4, kind = "Yellow" },
+			{ t = 0.2, kind = "Dashed" },
+			{ t = 0.6, kind = "Dashed" }, -- 좌회전 차로 경계
+			{ t = 0.8, kind = "Dashed" },
 		},
 	} :: Road
 end
@@ -127,6 +156,24 @@ for name, road in { sejong = Lanes.sejong, sowol = Lanes.sowol } do
 	for lane, l in road.lanes do
 		local n = Lanes.check(Lanes.line(road, l.t, l.dir), 1.3, 2, true)
 		assert(n.plaza == 0 and n.strip == 0, `차로 경로 {name}.{lane}이 차도를 벗어난다: 광장 쪽 {n.plaza}, 맞은편 보도 {n.strip}`)
+	end
+end
+
+-- 칠하는 범위의 비율 t 선 (단면 순서)
+function Lanes.marking(road: Road, t: number): { Vector3 }
+	local out = {}
+	for i = road.marked[1], road.marked[2] do
+		local s = road.stations[i]
+		table.insert(out, s[1]:Lerp(s[2], t))
+	end
+	return out
+end
+
+-- 시작 검사: 모든 차선이 차도 위 (양옆 0.2 m까지)
+for name, road in { sejong = Lanes.sejong, sowol = Lanes.sowol } do
+	for _, l in road.lines do
+		local n = Lanes.check(Lanes.marking(road, l.t), 0.2, 1)
+		assert(n.plaza == 0 and n.strip == 0, `차선 {name} t={l.t}이 차도를 벗어난다: 광장 쪽 {n.plaza}, 맞은편 보도 {n.strip}`)
 	end
 end
 
