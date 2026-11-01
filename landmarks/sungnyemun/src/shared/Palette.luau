@@ -13,6 +13,7 @@ local paint: { [string]: Paint } = {
 	noerok = { material = PAINTED, color = Color3.fromHex("#34645A") }, -- 뇌록: 목부 일반 가칠 (S7 p.460, 표 4-26 p.421)
 	seokganju = { material = PAINTED, color = Color3.fromHex("#7A2C20") }, -- 석간주: 기둥·판벽 (S7 p.421·456, S11 ≈ #80291D)
 	yeonbaek = { material = PAINTED, color = Color3.fromHex("#E6E1D3") }, -- 연백: 연목개판 백색 가칠 (S7 p.451)
+	meok = { material = PAINTED, color = Color3.fromHex("#1C1B1D") }, -- 먹: 홍예천장 바탕 (S7 p.455 "검정색 바탕에 오색운문"). 도판 #0D0C0E(p.438 첨차 마구리)를 조금 밝힘 — 근사
 	giwa = { material = Enum.Material.Slate, color = Color3.fromRGB(72, 74, 78) }, -- 기와 회흑
 	yangseong = { material = Enum.Material.Plaster, color = Color3.fromRGB(226, 222, 210) }, -- 양성바름 회백
 	wajae = { material = Enum.Material.Slate, color = Color3.fromRGB(88, 88, 90) }, -- 잡상·취두·용두·토수 암회색 (S3 p.408)
@@ -44,8 +45,11 @@ local paint: { [string]: Paint } = {
 	silhouetteC = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(190, 184, 172) },
 }
 
--- 부재 이름(Part.Name) → 칠. 없는 이름은 뇌록 (S7: 목부 일반이 뇌록 주바탕)
+-- 부재 이름(Part.Name) → 칠. 없는 이름은 뇌록 (S7 p.460 뇌록 주바탕). 축부·공포·연목·부연·초매기·이매기·추녀·사래가
+-- 모두 뇌록 바탕 (S7 pp.451~454). 부연개판·순각판·갈모산방은 바탕 기록 없음 → 뇌록 근사.
+-- 면 단위 칠(배면 육색, 마구리 먹·장단, 장단 밑 연백 p.462)은 부재 한 색으로 못 나타낸다 → 단청 문양 쪽 일.
 local byName: { [string]: string } = {
+	-- 기둥 석간주 (S7 표 4-26 p.421). p.457 "상층 기둥의 석간주칠은 제외"는 공정 순서 문단이고 2013 사진(S8·S11)에서 붉다 → 석간주
 	Pyeongju = "seokganju", Uju = "seokganju", Goju = "seokganju", GwiGoju = "seokganju", UpperPyeongju = "seokganju",
 	-- 문루 마루 (Munru): 귀틀·장선·동바리·마루널은 들기름칠 (S4 181~185 부재표 마감)
 	JangGwiteul = "deulgireum", DongGwiteul = "deulgireum", Jangseon = "deulgireum", Dongbari = "deulgireum", Maruneol = "deulgireum",
@@ -60,11 +64,12 @@ local byName: { [string]: string } = {
 	MaruCap = "giwa", Sumaksae = "giwa", Ammaksae = "giwa",
 	Maru = "yangseong", Yeonmaru = "yangseong",
 	Japsang = "wajae", Yongdu = "wajae", Chwidu = "wajae", Tosu = "wajae",
-	-- 육축 (Yukchuk). 성문은 S4 064 부재표 마감 석간주, 반자널·둔테 칠은 자료 없음 → 목부 일반 뇌록·석간주 근사
+	-- 육축 (Yukchuk). 성문은 석간주에 들기름칠 (S4 064 부재표, S7 p.456), 둔테 칠은 자료 없음 → 석간주 근사.
+	-- 반자널 = 홍예천장: 먹 바탕에 쌍룡도·오색운문 (S7 p.455). 그림은 아직 없다
 	YukchukBody = "seokchuk", Stone = "myeonseok", Hongyeseok = "myeonseok", Nujo = "myeonseok",
 	Dideumdol = "myeonseok", Somaetdol = "myeonseok", Panseok = "panseok",
 	YeojangJeon = "jeondol", Okgaejeon = "giwa", -- 여장 전돌·옥개전 (S7 p.198 옥개전은 기와처럼 구운 것)
-	Seongmun = "seokganju", Dunte = "seokganju", Cheoryeop = "soe", Banjaneol = "noerok",
+	Seongmun = "seokganju", Dunte = "seokganju", Cheoryeop = "soe", Banjaneol = "meok",
 	PavilionBase = "gidan", Pyoseok = "gidan", -- 지붕 분해 표식 돌
 	Jeonsidae = "seokganju", -- 공포 모형 전시대 (근사: 자료 없음, 문루 안 계단·난간과 같은 석간주)
 	SeongBody = "seongdol", SeongBack = "jandi", Yeojang = "yeojangseok", Miseok = "yeojangseok", Okgae = "okgaeseok",
