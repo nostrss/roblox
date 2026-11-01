@@ -366,11 +366,11 @@ gridFacade("concrete", {
       const len = Math.hypot(nx, ny, nz);
       const lit = clamp((nx * L[0] + ny * L[1] + nz * L[2]) / len);
       const [t0, t1, t2] = tone[row * COLS + col];
-      const rust = clamp(fine(u, v) * 1.5 - 0.35 + t0 * 0.3);
+      const rust = clamp(fine(u, v) * 1.3 - 0.4 + t0 * 0.08); // 판마다 차이는 작게: 크면 벽돌 벽처럼 보인다
       const pit = n3((u * 512) % 256, (v * 512) % 256);
       // 어두운 갈회색 ↔ 녹 갈색, 판마다 명도가 다르다
-      const a = [0.3, 0.27, 0.25], b = [0.38, 0.24, 0.17];
-      const base = 0.82 + t1 * 0.3;
+      const a = [0.27, 0.25, 0.24], b = [0.33, 0.23, 0.18];
+      const base = 0.95 + t1 * 0.08;
       const c = [mix(a[0], b[0], rust), mix(a[1], b[1], rust), mix(a[2], b[2], rust)].map((q) => q * base * (0.92 + pit * 0.16));
       const seam = Math.min(Math.min(mx, PW - mx), Math.min(my, PH - my));
       const dark = seam < 1.6 ? 0.45 : 1;

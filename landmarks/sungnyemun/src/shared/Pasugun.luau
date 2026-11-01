@@ -84,9 +84,9 @@ local function body(d: Dress): { Figures.Box }
 	local b: { Figures.Box } = {
 		mesh("legL", M.boot, 0.17, 0.46, 0.3, 0.1, 0.23, 0.02),
 		mesh("legR", M.boot, 0.17, 0.46, 0.3, -0.1, 0.23, 0.02),
-		mesh("upper", d.torso, 0.56, d.torsoHeight, d.torsoDepth, 0, 1.42 - d.torsoHeight / 2, 0, true),
-		mesh("armL", d.arm, 0.17, 0.64, 0.17, 0.25, 1.05, 0),
-		mesh("armR", d.arm, 0.17, 0.64, 0.17, -0.25, 1.05, 0),
+		mesh("upper", d.torso, 0.6, d.torsoHeight, d.torsoDepth, 0, 1.42 - d.torsoHeight / 2, 0, true),
+		mesh("armL", d.arm, 0.16, 0.6, 0.16, 0.26, 1.0, 0),
+		mesh("armR", d.arm, 0.16, 0.6, 0.16, -0.26, 1.0, 0),
 		mesh("upper", M.head, 0.235, 0.345, 0.22, 0, 1.54, 0.01),
 		d.hat,
 	}
@@ -130,7 +130,7 @@ local function jeongbyeong(torso: { number }, spear: boolean): { Figures.Box } -
 end
 
 local function geumrugwan(): { Figures.Box } -- 금루관 후보 (sp03·sp07, 역할 추정)
-	local b = body({ torso = M.robeGeumru, arm = M.armTeal, hat = mesh("upper", M.tallHat, 0.3, 0.33, 0.3, 0, 1.84, 0), torsoHeight = 1.22, torsoDepth = 0.4 })
+	local b = body({ torso = M.robeGeumru, arm = M.armTeal, hat = mesh("upper", M.tallHat, 0.3, 0.26, 0.3, 0, 1.77, 0), torsoHeight = 1.22, torsoDepth = 0.4 })
 	table.insert(b, { joint = "armL", size = Vector3.new(0.03, 0.36, 0.36), at = CFrame.new(0.3, 0.72, 0.16) * CFrame.Angles(0, 0, math.pi / 2), color = hex("#8C7A3C"), shape = CYL, material = METAL }) -- 징
 	table.insert(b, rod("armR", 0.34, 0.03, -0.3, 0.68, 0.06, hex("#5A2E22"))) -- 징채
 	return b

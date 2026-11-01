@@ -26,9 +26,9 @@ return {
 		Sky = sky(89508213159277, 131069333135660, 98563339719199, 116274250898115, 80282693899109, 125175301438133),
 		Atmosphere = { Density = 0.16, Offset = 0.2, Color = rgb(255, 196, 150), Decay = rgb(170, 120, 130), Glare = 0.3, Haze = 0.5 },
 		ColorCorrectionEffect = { TintColor = rgb(255, 240, 226), Saturation = 0.02, Contrast = 0.04, Brightness = 0 },
-		BloomEffect = { Intensity = 0.7, Size = 32, Threshold = 1.6 },
+		BloomEffect = { Intensity = 0.4, Size = 28, Threshold = 2.2 },
 		SunRaysEffect = { Intensity = 0.14, Spread = 0.5 },
-		Lighting = { Brightness = 2.8, OutdoorAmbient = rgb(118, 100, 112), Ambient = rgb(70, 56, 60), ColorShift_Top = rgb(255, 176, 104), EnvironmentDiffuseScale = 1, EnvironmentSpecularScale = 1 },
+		Lighting = { Brightness = 2.8, OutdoorAmbient = rgb(118, 100, 112), Ambient = rgb(70, 56, 60), ColorShift_Top = rgb(255, 176, 104), EnvironmentDiffuseScale = 1, EnvironmentSpecularScale = 0.5 },
 	},
 	night = {
 		Sky = sky(134621696452368, 114576810942815, 71280896274677, 113512236693112, 72406569135805, 108349560716143),
