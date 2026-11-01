@@ -76,12 +76,15 @@ return function()
 	block("PavilionBase", -lx - m, H, -lz, -lx, top, lz)
 	block("PavilionBase", lx, H, -lz, lx + m, top, lz)
 
-	-- 정면 광장 시작 위치: 석축 남측면에서 35 m, 문루를 바라본다(-Z). 건물 자리로 함께 돌아 남서 광장에 놓인다
+	-- 정면 광장 시작 위치: 박석 광장 가운데, 문루를 바라본다(-Z). 건물 자리로 함께 돌아 남서 광장에 놓인다. 판은 보이지 않게 둔다
 	local spawnPoint = Instance.new("SpawnLocation")
 	spawnPoint.Anchored = true
 	spawnPoint.Size = Vector3.new(12, 1, 12)
-	local spawnZ = D.wall.south + 35
-	spawnPoint.CFrame = CFrame.new(0, s(Plaza.floor(spawnZ)) + 0.5, s(spawnZ)) -- 광장 바닥은 문에서 멀수록 높다 (ADR 0006)
+	spawnPoint.Transparency = 1
+	spawnPoint.CanCollide = false
+	spawnPoint.CanQuery = false
+	local spawnZ = 68 -- 박석 광장 북쪽 끝(Z 62→100, Plaza 주석 S13). 도로에서 떨어지되 문에서 약 63 m 떨어져 문루·성곽이 한눈에 든다
+	spawnPoint.CFrame = CFrame.new(0, s(Plaza.floor(spawnZ)) - 0.5, s(spawnZ)) -- 광장 바닥은 문에서 멀수록 높다 (ADR 0006)
 	spawnPoint.Parent = model
 
 	CollectionService:AddTag(model, Tags.GREYBOX)
