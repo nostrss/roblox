@@ -6,11 +6,13 @@ local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 
+local Meshes = require(script.Parent.Meshes)
 local Tags = require(script.Parent.Tags)
 local Units = require(script.Parent.Units)
 
--- 차 몸을 이루는 상자 하나 (m). at = 차 바닥 가운데에서 상자 중심까지, 앞 = −Z. color가 없으면 그 차의 몸 색
-export type Box = { size: Vector3, at: Vector3, color: Color3?, material: Enum.Material? }
+-- 차 몸을 이루는 상자 하나 (m). at = 차 바닥 가운데에서 상자 중심까지, 앞 = −Z. color가 없으면 그 차의 몸 색.
+-- mesh가 있으면 상자 대신 그 메시로 짓는다 (Traffic.meshes로 서버가 원본을 미리 받아 둔다. 아직 없으면 상자)
+export type Box = { size: Vector3, at: Vector3, color: Color3?, material: Enum.Material?, mesh: number?, texture: number?, yaw: number? }
 
 export type Kind = {
 	boxes: { Box }, -- 첫 상자가 움직임의 뿌리. 그림자는 shadow일 때 첫 상자만
@@ -35,6 +37,21 @@ local HEAD = Color3.fromRGB(255, 240, 210)
 local TAIL = Color3.fromRGB(200, 20, 20)
 
 local Traffic = {}
+
+-- 차들이 쓰는 메시 목록 (서버가 Meshes.serve에 넘긴다)
+function Traffic.meshes(config: Config): { Meshes.Spec }
+	local specs: { Meshes.Spec } = {}
+	for _, lane in config.lanes do
+		for _, kind in lane.kinds do
+			for _, b in kind.boxes do
+				if b.mesh then
+					table.insert(specs, b)
+				end
+			end
+		end
+	end
+	return specs
+end
 
 -- 꺾은선 위 처음부터 s(스터드) 간 점. cum[i] = 1번 점부터 i번 점까지 길이
 function Traffic.at(path: { Vector3 }, cum: { number }, s: number): Vector3
@@ -78,8 +95,19 @@ local function build(kind: Kind): (Model, BasePart, CFrame, number)
 	local offset = CFrame.identity
 	local half = 0
 	for i, b in kind.boxes do
-		local p = part("Body", b.size * S, b.color or body, b.material or Enum.Material.SmoothPlastic, model)
-		local cf = CFrame.new(b.at * S)
+		local copy = if b.mesh then Meshes.clone(b.mesh) else nil
+		local p: BasePart
+		if copy then
+			copy.Name = "Body"
+			copy.Anchored = false
+			copy.CastShadow = false
+			copy.Size = b.size * S
+			copy.Parent = model
+			p = copy
+		else
+			p = part("Body", b.size * S, b.color or body, b.material or Enum.Material.SmoothPlastic, model)
+		end
+		local cf = CFrame.new(b.at * S) * CFrame.Angles(0, math.rad(b.yaw or 0), 0)
 		half = math.max(half, (math.abs(b.at.Z) + b.size.Z / 2) * S)
 		if i == 1 then
 			p.Anchored = true

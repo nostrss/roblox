@@ -154,4 +154,36 @@ function Plaza.walkable(x: number, z: number): boolean
 	return Plaza.inside(x, z, boundaryPoly)
 end
 
+-- 광장 바닥(연석 안쪽 보도 띠 안) 다각형
+local floorPoly = {}
+for i = 1, #Plaza.curb do
+	floorPoly[i] = { Plaza.radial(i, -Plaza.bandWidth) }
+end
+
+-- 점 (x, z)가 광장 바닥 안에서 모든 변으로부터 margin m 이상 떨어졌나
+function Plaza.onFloor(x: number, z: number, margin: number): boolean
+	if not Plaza.inside(x, z, floorPoly) then
+		return false
+	end
+	for i, a in floorPoly do
+		local b = floorPoly[i % #floorPoly + 1]
+		local dx, dz = b[1] - a[1], b[2] - a[2]
+		local t = math.clamp(((x - a[1]) * dx + (z - a[2]) * dz) / (dx * dx + dz * dz), 0, 1)
+		if math.sqrt((a[1] + dx * t - x) ^ 2 + (a[2] + dz * t - z) ^ 2) < margin then
+			return false
+		end
+	end
+	return true
+end
+
+-- 점 (x, z)가 잔디인가: 바닥 구역(zones) 어디에도 들지 않거나 그 구역의 흙 마당 밖이다
+function Plaza.onLawn(x: number, z: number): boolean
+	for _, zone in Plaza.zones do
+		if z >= zone.z0 and z < zone.z1 then
+			return zone.x0 ~= nil and (x < zone.x0 or x > zone.x1)
+		end
+	end
+	return true
+end
+
 return Plaza

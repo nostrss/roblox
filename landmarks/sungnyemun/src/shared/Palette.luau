@@ -12,6 +12,7 @@ local PAINTED = Enum.Material.Plastic
 local paint: { [string]: Paint } = {
 	noerok = { material = PAINTED, color = Color3.fromHex("#34645A") }, -- 뇌록: 목부 일반 가칠 (S7 p.460, 표 4-26 p.421)
 	seokganju = { material = PAINTED, color = Color3.fromHex("#7A2C20") }, -- 석간주: 기둥·판벽 (S7 p.421·456, S11 ≈ #80291D)
+	seongmun = { material = Enum.Material.WoodPlanks, color = Color3.fromHex("#4E2519") }, -- 성문 안쪽 면: 석간주에 들기름칠 한 널. 통로 조명에 밝게 뜨지 않게 어둡게 (근사)
 	yeonbaek = { material = PAINTED, color = Color3.fromHex("#E6E1D3") }, -- 연백: 연목개판 백색 가칠 (S7 p.451)
 	meok = { material = PAINTED, color = Color3.fromHex("#1C1B1D") }, -- 먹: 홍예천장 바탕 (S7 p.455 "검정색 바탕에 오색운문"). 도판 #0D0C0E(p.438 첨차 마구리)를 조금 밝힘 — 근사
 	giwa = { material = Enum.Material.Slate, color = Color3.fromRGB(72, 74, 78) }, -- 기와 회흑
@@ -32,7 +33,7 @@ local paint: { [string]: Paint } = {
 	okgaeseok = { material = Enum.Material.Granite, color = Color3.fromRGB(150, 145, 140) }, -- 여장 옥개석 (그늘져 보여 한 단 어둡게)
 	-- 광장·도로 (색은 S13 영상·사용자 항공 사진을 눈으로 참고)
 	masato = { material = Enum.Material.Sand, color = Color3.fromRGB(196, 176, 140) }, -- 흙(마사토) 마당
-	bakseok = { material = Enum.Material.Slate, color = Color3.fromRGB(168, 164, 156) }, -- 박석 광장
+	bakseok = { material = Enum.Material.Concrete, color = Color3.fromRGB(150, 146, 138) }, -- 박석 광장 (무늬는 Facades.bakseok 텍스처. Slate는 노을에 얼음처럼 번들거렸다)
 	jandi = { material = Enum.Material.Grass, color = Color3.fromRGB(92, 120, 64) }, -- 잔디, 성곽 뒤 비탈
 	bodo = { material = Enum.Material.Pavement, color = Color3.fromRGB(150, 146, 140) }, -- 보도 포장
 	asphalt = { material = Enum.Material.Asphalt, color = Color3.fromRGB(58, 58, 60) }, -- 차도
@@ -45,6 +46,11 @@ local paint: { [string]: Paint } = {
 	silhouetteA = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(178, 176, 170) },
 	silhouetteB = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(156, 156, 154) },
 	silhouetteC = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(190, 184, 172) },
+	-- 광장 조경 (근사: 색은 눈대중)
+	gyeongyeseok = { material = Enum.Material.Granite, color = Color3.fromRGB(150, 146, 138) }, -- 잔디·마당 경계석, 의자 다리
+	saengul = { material = Enum.Material.LeafyGrass, color = Color3.fromRGB(58, 84, 46) }, -- 생울타리
+	uijapan = { material = Enum.Material.WoodPlanks, color = Color3.fromRGB(122, 88, 58) }, -- 의자 앉음판
+	cheol = { material = Enum.Material.Metal, color = Color3.fromRGB(46, 48, 52) }, -- 가로등 기둥
 }
 
 -- 부재 이름(Part.Name) → 칠. 없는 이름은 뇌록 (S7 p.460 뇌록 주바탕). 축부·공포·연목·부연·초매기·이매기·추녀·사래가
@@ -71,13 +77,15 @@ local byName: { [string]: string } = {
 	YukchukBody = "seokchuk", Stone = "myeonseok", Hongyeseok = "myeonseok", Nujo = "myeonseok",
 	Dideumdol = "myeonseok", Somaetdol = "myeonseok", Panseok = "panseok",
 	YeojangJeon = "jeondol", Okgaejeon = "giwa", -- 여장 전돌·옥개전 (S7 p.198 옥개전은 기와처럼 구운 것)
-	Seongmun = "seokganju", Dunte = "seokganju", Cheoryeop = "soe", Banjaneol = "meok",
+	Seongmun = "seongmun", Dunte = "seongmun", Cheoryeop = "soe", Banjaneol = "meok",
 	PavilionBase = "gidan", Pyoseok = "gidan", -- 지붕 분해 표식 돌
 	Jeonsidae = "seokganju", -- 공포 모형 전시대 (근사: 자료 없음, 문루 안 계단·난간과 같은 석간주)
 	SeongBody = "seongdol", SeongBack = "jandi", Yeojang = "yeojangseok", Miseok = "yeojangseok", Okgae = "okgaeseok",
 	Masato = "masato", Bakseok = "bakseok", Jandi = "jandi", Bodo = "bodo", Asphalt = "asphalt", Ongbyeok = "ongbyeok", Hoengdan = "hoengdan",
 	ChaseonWhite = "hoengdan", ChaseonYellow = "chaseonYellow", ChaseonBlue = "chaseonBlue",
 	SilhouetteA = "silhouetteA", SilhouetteB = "silhouetteB", SilhouetteC = "silhouetteC",
+	GeonmulCheoma = "silhouetteB", GeonmulOktap = "silhouetteB", GeonmulSeolbi = "silhouetteB", GeonmulSangga = "silhouetteB",
+	Gyeonggyeseok = "gyeongyeseok", Saengul = "saengul", UijaDari = "gyeongyeseok", UijaPan = "uijapan", Cheol = "cheol",
 }
 
 local function of(name: string): Paint

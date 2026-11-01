@@ -5,6 +5,7 @@
 -- 사람과 부딪히지 않는다: 부딪힘·조회·닿기를 모두 끈다.
 local RunService = game:GetService("RunService")
 
+local Meshes = require(script.Parent.Meshes)
 local Units = require(script.Parent.Units)
 
 export type Joint = "root" | "upper" | "legL" | "legR" | "armL" | "armR"
@@ -18,6 +19,9 @@ export type Box = {
 	material: Enum.Material?,
 	shape: Enum.PartType?,
 	shadow: boolean?,
+	mesh: number?, -- 메시 에셋 ID. 있으면 상자 대신 이 메시로 짓는다 (serveMeshes가 서버에서 미리 받아 둔다)
+	texture: number?, -- 메시 그림 에셋 ID
+	tint: boolean?, -- 그림을 빼고 color로 칠한다 (같은 메시를 다른 색으로 쓸 때)
 }
 
 -- 열쇠 자리: at초에 (x, z) m(건물 축). 다음 열쇠까지 pose 자세로 걷거나 서 있는다.
@@ -42,7 +46,7 @@ export type Config = {
 -- 자세: 팔 { 앞뒤(X), 안팎(Z) } rad, lean = 허리 위 앞으로 기울기. 차분하게 잡았다 (근사: 눈으로 정함)
 type Pose = { armL: { number }, armR: { number }, lean: number }
 local POSES: { [string]: Pose } = {
-	stand = { armL = { 0, 0 }, armR = { 0, 0 }, lean = 0 },
+	stand = { armL = { 0, 0.07 }, armR = { 0, -0.07 }, lean = 0 }, -- 팔을 몸에서 살짝 뗀다 (붙이면 차렷 인형처럼 보인다)
 	push = { armL = { -1.35, -0.12 }, armR = { -1.35, 0.12 }, lean = 0.12 }, -- 문 밀기·당기기
 	hold = { armL = { -1.05, -0.4 }, armR = { -1.05, 0.4 }, lean = 0 }, -- 두 손을 가슴 앞에 (표신·상자)
 	carrybox = { armL = { -1.1, -0.3 }, armR = { 0, 0 }, lean = 0 }, -- 왼팔로 상자를 받쳐 든다 (오른손 창은 그대로)
@@ -60,6 +64,8 @@ local EASE = 0.3 -- 걸음이 시작·끝나는 시간(초)
 local STRIDE = 1.5 -- 걸음 한 주기 거리(m)
 local GAIT_LEG = 0.38 -- 다리 흔들림(rad). 행진이라 작게
 local GAIT_ARM = 0.22 -- 팔 흔들림(rad)
+local GAIT_BOB = 0.025 -- 걸을 때 몸이 오르내리는 높이(m)
+local GAIT_TWIST = 0.07 -- 걸을 때 상체가 다리와 반대로 도는 각(rad)
 
 local HIP = { x = 0.1, y = 0.82 } -- 엉덩이 관절 (m)
 local SHOULDER = { x = 0.27, y = 1.36 } -- 어깨 관절 (m)
@@ -168,20 +174,47 @@ do -- 검산: 걷는 중간과 끝, 도중 접속한 시각의 자리
 	assert(a.gait > 0 and b.gait == 0 and c.gait == 0, "걷는 중 판단이 틀렸다")
 end
 
+local MESH_WAIT = 30 -- 메시 원본을 기다리는 시간(초). 넘으면 그 조각은 상자로 짓는다
+
+-- 서버에서 한 번 부른다: 인물이 쓰는 메시 원본을 받아 둔다
+function Figures.serveMeshes(config: Config)
+	local specs: { Meshes.Spec } = {}
+	for _, figure in config.figures do
+		for _, box in figure.boxes do
+			if box.mesh then
+				table.insert(specs, box)
+			end
+		end
+	end
+	Meshes.serve(specs)
+end
+
 local function makePart(name: string, box: Box, parent: Instance): BasePart
-	local p = Instance.new("Part")
+	local p: BasePart
+	if box.mesh then
+		p = Meshes.clone(box.mesh, MESH_WAIT) :: any
+	end
+	if not p then
+		local block = Instance.new("Part")
+		block.Shape = box.shape or Enum.PartType.Block
+		block.Color = box.color
+		block.Material = box.material or Enum.Material.Fabric
+		block.TopSurface = Enum.SurfaceType.Smooth
+		block.BottomSurface = Enum.SurfaceType.Smooth
+		p = block
+	end
+	if box.tint and p:IsA("MeshPart") then
+		p.TextureID = ""
+		p.Color = box.color
+		p.Material = box.material or Enum.Material.Fabric
+	end
 	p.Name = name
 	p.Anchored = true
 	p.CanCollide = false
 	p.CanQuery = false
 	p.CanTouch = false
 	p.CastShadow = box.shadow == true
-	p.Shape = box.shape or Enum.PartType.Block
 	p.Size = box.size * S
-	p.Color = box.color
-	p.Material = box.material or Enum.Material.Fabric
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
 	p.Parent = parent
 	return p
 end
@@ -240,7 +273,8 @@ function Figures.start(config: Config): (t: number) -> Vector3?
 
 	local function place(l: Live, st: State)
 		local g = config.ground(st.x, st.z)
-		local root = config.site * CFrame.new(st.x * S, g * S, st.z * S) * CFrame.Angles(0, st.yaw, 0)
+		local bob = math.abs(math.sin(st.phase)) * GAIT_BOB * st.gait
+		local root = config.site * CFrame.new(st.x * S, (g + bob) * S, st.z * S) * CFrame.Angles(0, st.yaw, 0)
 		local m = st.mix
 		local from, to = st.from, st.to
 		local function arm(side: "armL" | "armR", swing: number): CFrame
@@ -253,7 +287,7 @@ function Figures.start(config: Config): (t: number) -> Vector3?
 		end
 		local lean = from.lean + (to.lean - from.lean) * m
 		local sin = math.sin(st.phase) * st.gait
-		local up = PIVOTS.upper * CFrame.Angles(lean, 0, 0) * PIVOTS.upper:Inverse()
+		local up = PIVOTS.upper * CFrame.Angles(lean, sin * GAIT_TWIST, 0) * PIVOTS.upper:Inverse()
 		T.root = root
 		T.upper = root * up
 		T.legL = root * PIVOTS.legL * CFrame.Angles(sin * GAIT_LEG, 0, 0) * PIVOTS.legL:Inverse()

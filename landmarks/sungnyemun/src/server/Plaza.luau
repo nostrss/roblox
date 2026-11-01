@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Tags = require(ReplicatedStorage.Core.Tags)
 local Units = require(ReplicatedStorage.Core.Units)
 local Plaza = require(ReplicatedStorage.Shared.Plaza)
+local Facades = require(ReplicatedStorage.Shared.Facades)
 local site = require(ReplicatedStorage.Shared.Site)
 local setup = require(script.Parent.Member)
 
@@ -17,6 +18,7 @@ local S = Units.studs(1)
 local SLAB = 0.5 -- 보도·도로 판 두께 (연석 단차 0.15를 덮는다)
 local FLOOR = 1 -- 광장 바닥 판 두께
 local WALL = 0.4 -- 광장 가장자리 옹벽 두께
+local GRASS = 0.5 -- 지형 풀 판 두께의 절반쯤 (m). 지형 칸이 4 스터드(1.36 m)라 너무 얇으면 채워지지 않는다
 
 local model: Model
 
@@ -127,6 +129,22 @@ local function floorStrip(name: string, x0: number, x1: number, z0: number, z1: 
 		* CFrame.new(Vector3.new((x0 + x1) / 2, (h0 + h1) / 2, (z0 + z1) / 2) * S)
 		* CFrame.Angles(-math.atan2(h1 - h0, z1 - z0), 0, 0)
 		* CFrame.new(0, -FLOOR * S / 2, 0)
+	if name == "Bakseok" then
+		-- 박석 무늬. 띠마다 건물 축 좌표로 밀어 이음매 없이 이어지게 한다
+		local tile = Facades.bakseok.tile
+		local t = Instance.new("Texture")
+		t.Face = Enum.NormalId.Top
+		t.Texture = `rbxassetid://{Facades.bakseok.texture}`
+		t.StudsPerTileU = tile * S
+		t.StudsPerTileV = tile * S
+		t.OffsetStudsU = (x0 % tile) * S
+		t.OffsetStudsV = (z0 % tile) * S
+		t.Color3 = Color3.new(0.68, 0.68, 0.68) -- 노을·낮 해에 하얗게 날리지 않게 낮춘다
+		t.Parent = p
+	elseif name == "Jandi" and x1 - x0 > 0.5 then
+		-- 잔디: 지형 풀(바람에 흔들리는 풀 장식)을 판 위에 얇게 덮는다. 판은 그대로 두어 부딪힘·구멍을 막는다
+		workspace.Terrain:FillBlock(p.CFrame * CFrame.new(0, FLOOR * S / 2 - GRASS * S, 0), Vector3.new((x1 - x0) * S, 2.2 * GRASS * S, len * S), Enum.Material.Grass)
+	end
 	p.Parent = model
 end
 
@@ -149,6 +167,7 @@ return function()
 	end
 	model = Instance.new("Model")
 	model.Name = "Gwangjang"
+	workspace.Terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(78, 104, 52))
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 땅 끝(400 m)까지의 바닥이 실루엣 밑에서 스트리밍으로 빠지지 않게
 	local band, n = Plaza.bandWidth, #Plaza.curb
 

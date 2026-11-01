@@ -120,6 +120,9 @@ function Ceremony.serve(config: Config): () -> ()
 	local remote = Instance.new("RemoteEvent")
 	remote.Name = REMOTE
 	remote.Parent = ReplicatedStorage
+	if config.figures then
+		task.spawn(Figures.serveMeshes, config.figures) -- 받는 동안 Place 시작을 막지 않는다. 클라이언트는 원본이 올 때까지 기다린다
+	end
 	local total = Ceremony.duration(config.phases)
 
 	return function()
