@@ -17,7 +17,9 @@ local paint: { [string]: Paint } = {
 	yangseong = { material = Enum.Material.Plaster, color = Color3.fromRGB(226, 222, 210) }, -- 양성바름 회백
 	wajae = { material = Enum.Material.Slate, color = Color3.fromRGB(88, 88, 90) }, -- 잡상·취두·용두·토수 암회색 (S3 p.408)
 	seokchuk = { material = Enum.Material.Granite, color = Color3.fromRGB(176, 172, 165) }, -- 육축 몸 (포천석 담회색, S7 p.469)
-	myeonseok = { material = Enum.Material.Granite, color = Color3.fromRGB(196, 190, 182) }, -- 육축 면석 (돌마다 Greybox가 명도를 흔든다)
+	myeonseok = { material = Enum.Material.Granite, color = Color3.fromRGB(196, 190, 182) }, -- 육축 면석·홍예석·계단석 (돌마다 Yukchuk이 명도를 흔든다)
+	panseok = { material = Enum.Material.Granite, color = Color3.fromRGB(170, 166, 158) }, -- 홍예 통로 바닥 판석
+	soe = { material = Enum.Material.Metal, color = Color3.fromRGB(58, 54, 52) }, -- 성문 철엽 (S7 p.564 철엽·광두정)
 	jeondol = { material = Enum.Material.Concrete, color = Color3.fromRGB(118, 118, 115) }, -- 여장 전돌 회색 (S7 p.200). Brick 재질은 무늬가 붉어 회색 전돌로 안 보임 → 사진 필요
 	gidan = { material = Enum.Material.Granite, color = Color3.fromRGB(160, 156, 150) }, -- 문루 기단
 	-- 성곽: 신재 포천석 담회색에 약간 담홍색 (S7 p.469·497)
@@ -43,10 +45,11 @@ local byName: { [string]: string } = {
 	MaruCap = "giwa", Sumaksae = "giwa", Ammaksae = "giwa",
 	Maru = "yangseong", Yeonmaru = "yangseong",
 	Japsang = "wajae", Yongdu = "wajae", Chwidu = "wajae", Tosu = "wajae",
-	WallSouthWest = "seokchuk", WallSouthEast = "seokchuk", WallSouthOverArch = "seokchuk",
-	WallNorthWest = "seokchuk", WallNorthEast = "seokchuk", WallNorthOverArch = "seokchuk",
-	Stone = "myeonseok",
-	ParapetSouth = "jeondol", ParapetNorth = "jeondol", ParapetWest = "jeondol", ParapetEast = "jeondol",
+	-- 육축 (Yukchuk). 성문은 S4 064 부재표 마감 석간주, 반자널·둔테 칠은 자료 없음 → 목부 일반 뇌록·석간주 근사
+	YukchukBody = "seokchuk", Stone = "myeonseok", Hongyeseok = "myeonseok", Nujo = "myeonseok",
+	Dideumdol = "myeonseok", Somaetdol = "myeonseok", Panseok = "panseok",
+	YeojangJeon = "jeondol", Okgaejeon = "giwa", -- 여장 전돌·옥개전 (S7 p.198 옥개전은 기와처럼 구운 것)
+	Seongmun = "seokganju", Dunte = "seokganju", Cheoryeop = "soe", Banjaneol = "noerok",
 	PavilionBase = "gidan",
 	SeongBody = "seongdol", SeongBack = "jandi", Yeojang = "yeojangseok", Miseok = "yeojangseok", Okgae = "okgaeseok",
 	Masato = "masato", Bakseok = "bakseok", Jandi = "jandi", Bodo = "bodo", Asphalt = "asphalt", Ongbyeok = "ongbyeok", Hoengdan = "hoengdan",
