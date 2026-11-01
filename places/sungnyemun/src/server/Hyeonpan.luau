@@ -27,7 +27,8 @@ return function()
 	local function block(name: string, color: Color3, x0: number, x1: number, y0: number, y1: number, d0: number, d1: number): Part
 		local p = Instance.new("Part")
 		p.Name = name
-		setup(p, color)
+		setup(p)
+		p.Color = color -- 현판 색은 Shared.Hyeonpan.colors
 		p.Size = Vector3.new(x1 - x0, y1 - y0, d1 - d0) * S
 		p.CFrame = origin * CFrame.new(Vector3.new((x0 + x1) / 2, (y0 + y1) / 2, -(d0 + d1) / 2) * S)
 		p.Parent = model

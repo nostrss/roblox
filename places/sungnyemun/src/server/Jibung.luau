@@ -13,9 +13,6 @@ local M = require(ReplicatedStorage.Shared.JibungMeshes)
 local setup = require(script.Parent.Member)
 
 local S = Units.studs(1)
-local TILE = Color3.fromRGB(72, 74, 78) -- 기와 회흑색 근사 (재질은 F 단계)
-local YANGSEONG = Color3.fromRGB(226, 222, 210) -- 양성바름 (회백)
-local CLAY = Color3.fromRGB(88, 88, 90) -- 잡상·취두·용두·토수 (와제, 암회색 S3 p.408)
 local Q = { { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } } -- 동남 기준 점을 네 귀로 (x, z 부호)
 
 -- 단위 m·레벨 → 스터드 월드
@@ -44,12 +41,11 @@ local function half(bays: { number }): number
 	return t / 2
 end
 
-local function part(parent: Instance, name: string, color: Color3, material: Enum.Material, cf: CFrame, size: Vector3, shape: Enum.PartType?): Part
+local function part(parent: Instance, name: string, cf: CFrame, size: Vector3, shape: Enum.PartType?): Part
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Shape = shape or Enum.PartType.Block
-	setup(p, color)
-	p.Material = material
+	setup(p) -- 재질·색은 이름으로 Shared.Palette
 	p.Size = size
 	p.CFrame = cf
 	p.Parent = parent
@@ -57,12 +53,12 @@ local function part(parent: Instance, name: string, color: Color3, material: Enu
 end
 
 -- 윗면이 A → B 선(레벨 m)에 닿고 아래로 h 내려오는 띠 (마루 몸체)
-local function band(parent: Instance, name: string, color: Color3, material: Enum.Material, A: Vector3, B: Vector3, h: number, w: number)
+local function band(parent: Instance, name: string, A: Vector3, B: Vector3, h: number, w: number)
 	local a, b = W(A.X, A.Y, A.Z), W(B.X, B.Y, B.Z)
 	local d = (b - a).Unit
 	local side = d:Cross(Vector3.yAxis).Unit
 	local up = side:Cross(d).Unit
-	part(parent, name, color, material, CFrame.fromMatrix((a + b) / 2 - up * (h * S / 2), d, up, side), Vector3.new((b - a).Magnitude, h * S, w * S))
+	part(parent, name, CFrame.fromMatrix((a + b) / 2 - up * (h * S / 2), d, up, side), Vector3.new((b - a).Magnitude, h * S, w * S))
 end
 
 -- 마루 하나: 점 { x, 윗면, z, 밑면 } 줄을 따라 양성 몸체 + 위 수키와 줄
@@ -71,8 +67,8 @@ local function maru(parent: Instance, pts: { { number } }, w: number, cap: numbe
 		local p, q = pts[i], pts[i + 1]
 		local A, B = Vector3.new(p[1], p[2], p[3]), Vector3.new(q[1], q[2], q[3])
 		local h = math.max(p[2] - p[4], q[2] - q[4]) + 0.1 -- 지붕 속으로 0.1 묻음
-		band(parent, "Maru", YANGSEONG, Enum.Material.Plaster, A, B, h, w)
-		band(parent, "MaruCap", TILE, Enum.Material.Slate, A + Vector3.yAxis * 0.06, B + Vector3.yAxis * 0.06, 0.06, cap)
+		band(parent, "Maru", A, B, h, w)
+		band(parent, "MaruCap", A + Vector3.yAxis * 0.06, B + Vector3.yAxis * 0.06, 0.06, cap)
 	end
 end
 
@@ -84,7 +80,7 @@ local function onHip(parent: Instance, name: string, x: number, top: { { number 
 		local sx, sz = q[1], q[2]
 		local pos = W(sx * x, base + size[3] / 2, sz * (x - 7.388))
 		local d = Vector3.new(sx, 0, sz).Unit
-		local p = part(parent, name, CLAY, Enum.Material.Slate, CFrame.lookAt(pos, pos + d), Vector3.new(size[2], size[3], size[1]) * S)
+		local p = part(parent, name, CFrame.lookAt(pos, pos + d), Vector3.new(size[2], size[3], size[1]) * S)
 		p.CastShadow = false
 		table.insert(made, p)
 	end
@@ -108,10 +104,10 @@ local function deco(root: Model)
 				local edge = W(q[1] * turn, q[2], q[3] * turn)
 				if q[4] == 0 then
 					local pos = edge + n * (su.thick / 2) * S - Vector3.yAxis * (su.dia / 2) * S
-					part(maksaeM, "Sumaksae", TILE, Enum.Material.Slate, CFrame.fromMatrix(pos, n, Vector3.yAxis), Vector3.new(su.thick, su.dia, su.dia) * S, Enum.PartType.Cylinder)
+					part(maksaeM, "Sumaksae", CFrame.fromMatrix(pos, n, Vector3.yAxis), Vector3.new(su.thick, su.dia, su.dia) * S, Enum.PartType.Cylinder)
 				else
 					local pos = edge + n * (am.thick / 2) * S - Vector3.yAxis * (am.height / 2) * S
-					part(maksaeM, "Ammaksae", TILE, Enum.Material.Slate, CFrame.fromMatrix(pos, t, Vector3.yAxis), Vector3.new(am.width, am.height, am.thick) * S)
+					part(maksaeM, "Ammaksae", CFrame.fromMatrix(pos, t, Vector3.yAxis), Vector3.new(am.width, am.height, am.thick) * S)
 				end
 			end
 		end
@@ -165,7 +161,7 @@ local function deco(root: Model)
 	maru(maruM, pts, R.width, R.cap)
 	local C = K.chwidu
 	for _, sx in { 1, -1 } do
-		part(jangsikM, "Chwidu", CLAY, Enum.Material.Slate, CFrame.new(W(sx * (C.x0 + C.x1) / 2, (C.top + C.bottom) / 2, 0)),
+		part(jangsikM, "Chwidu", CFrame.new(W(sx * (C.x0 + C.x1) / 2, (C.top + C.bottom) / 2, 0)),
 			Vector3.new(C.x1 - C.x0, C.top - C.bottom, C.width) * S)
 	end
 
@@ -174,9 +170,9 @@ local function deco(root: Model)
 	local hx, hz = half(D.upperBays) + Y.inner, half(D.upperSideBays) + Y.inner
 	local h = Y.top - Y.bottom
 	for _, s in { 1, -1 } do
-		part(maruM, "Yeonmaru", YANGSEONG, Enum.Material.Plaster, CFrame.new(W(0, (Y.top + Y.bottom) / 2, s * (hz + Y.thick / 2))),
+		part(maruM, "Yeonmaru", CFrame.new(W(0, (Y.top + Y.bottom) / 2, s * (hz + Y.thick / 2))),
 			Vector3.new(2 * (hx + Y.thick), h, Y.thick) * S)
-		part(maruM, "Yeonmaru", YANGSEONG, Enum.Material.Plaster, CFrame.new(W(s * (hx + Y.thick / 2), (Y.top + Y.bottom) / 2, 0)),
+		part(maruM, "Yeonmaru", CFrame.new(W(s * (hx + Y.thick / 2), (Y.top + Y.bottom) / 2, 0)),
 			Vector3.new(Y.thick, h, 2 * hz) * S)
 	end
 
@@ -189,7 +185,7 @@ local function deco(root: Model)
 			if p:IsA("BasePart") and p.Name == "Sarae" then
 				local r = p.CFrame.RightVector
 				local tip = p.CFrame.Position + r * p.Size.X / 2
-				part(jangsikM, "Tosu", CLAY, Enum.Material.Slate, CFrame.fromMatrix(tip + r * (T.length / 2 - K.tosuTenon) * S, r, p.CFrame.UpVector),
+				part(jangsikM, "Tosu", CFrame.fromMatrix(tip + r * (T.length / 2 - K.tosuTenon) * S, r, p.CFrame.UpVector),
 					Vector3.new(T.length, T.height, T.width) * S)
 			end
 		end
@@ -215,8 +211,7 @@ return function()
 		for _, turn in { 0, math.pi } do
 			local p = (src :: MeshPart):Clone()
 			p.Name = name
-			setup(p, TILE)
-			p.Material = Enum.Material.Slate
+			setup(p)
 			-- 크기는 임포트된 그대로 둔다 (Size를 다시 넣으면 임포터 경계 상자와 조금만 달라도 메시 전체가 늘어나 추녀마루가 어긋난다)
 			p.CFrame = CFrame.Angles(0, turn, 0) * cf
 			p.Parent = root
