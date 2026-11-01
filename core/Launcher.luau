@@ -242,7 +242,7 @@ end
 
 -- 클라이언트에서 한 번 부른다: 프롬프트 문구, 소리 미리 불러오기, 허가가 오면 비행과 소리
 function Launcher.start(config: Config)
-	local I18n = require(script.Parent.I18n)
+	local I18n = require(script.Parent.I18n).text
 	local player = Players.LocalPlayer
 
 	local function label(inst: Instance)
