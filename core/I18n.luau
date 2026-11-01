@@ -10,6 +10,8 @@ local strings: { [string]: { ko: string, en: string } } = {
 	["time.night"] = { ko = "밤", en = "Night" },
 	["roofSplit.split"] = { ko = "분해해 보기", en = "Take it apart" },
 	["roofSplit.join"] = { ko = "조립하기", en = "Put it back together" },
+	["launcher.name"] = { ko = "화차", en = "Hwacha rocket cart" },
+	["launcher.fire"] = { ko = "지붕으로 날아가기", en = "Fly up to the roof" },
 }
 
 local player = Players.LocalPlayer

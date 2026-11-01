@@ -10,4 +10,6 @@ return {
 	-- 분해 표식(core Split, 클라이언트): 다가가 누르면 내 화면에서만 겹별로 떠오른다. Part 하나에 붙인다. 태그가 어느 분해인지 정한다
 	ROOF_SPLIT_MARKER = "RoofSplitMarker", -- 지붕 분해 (core RoofSplit: 문루가 Attribute 겹·층별로)
 	MODEL_SPLIT_MARKER = "ModelSplitMarker", -- 모형 분해: 붙인 전시대와 같은 Model 안 부재가 밑면 높이 겹별로 (Place 데이터 collect)
+	-- 발사대(core Launcher): 이 태그가 붙은 Model이 있으면 코드가 상자로 짓는 대신 그것을 쓴다 (Studio 모델로 바꿀 때 붙인다)
+	LAUNCHER = "Launcher",
 }
