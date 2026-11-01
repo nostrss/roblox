@@ -53,7 +53,7 @@ local function part(parent: Instance, name: string, cf: CFrame, size: Vector3, s
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Shape = shape or Enum.PartType.Block
-	setup(p) -- 재질·색은 이름으로 Shared.Palette
+	setup(p, name == "Maru") -- 재질·색은 이름으로 Shared.Palette. 마루 몸체는 지붕 위를 걸을 때 딛고 넘는다
 	RoofSplit.mark(p, story, Split)
 	p.Size = size
 	p.CFrame = cf
@@ -208,7 +208,99 @@ local function deco(root: Model)
 	maruM.Parent, maksaeM.Parent, jangsikM.Parent = root, root, root
 end
 
+-- 세 점(스터드)을 지나는 면이 윗면인 두께 thick 삼각 판 = 쐐기 두 개
+local function triangle(parent: Instance, a: Vector3, b: Vector3, c: Vector3, thick: number)
+	local ab, ac, bc = b - a, c - a, c - b
+	local abd, acd, bcd = ab:Dot(ab), ac:Dot(ac), bc:Dot(bc)
+	if abd > acd and abd > bcd then -- 가장 긴 변을 b–c로
+		c, a = a, c
+	elseif acd > bcd and acd > abd then
+		a, b = b, a
+	end
+	ab, ac, bc = b - a, c - a, c - b
+	local right = ac:Cross(ab)
+	if right.Magnitude < 1e-3 then
+		return -- 넓이 없는 삼각형
+	end
+	right = right.Unit
+	local up = bc:Cross(right).Unit
+	local back = bc.Unit
+	local height = math.abs(ab:Dot(up))
+	local down = (if right.Y > 0 then -right else right) * thick / 2 -- 판 윗면이 세 점 면에 오게
+	local function wedge(mid: Vector3, x: Vector3, z: Vector3, edge: Vector3)
+		local p = Instance.new("WedgePart")
+		p.Name = "Walk"
+		p.Anchored = true
+		p.CanTouch = false
+		p.CastShadow = false
+		p.Transparency = 1
+		p.Size = Vector3.new(thick, height, math.abs(edge:Dot(back)))
+		p.CFrame = CFrame.fromMatrix(mid + down, x, up, z)
+		p.Parent = parent
+	end
+	wedge((a + b) / 2, right, back, ab)
+	wedge((a + c) / 2, -right, -back, ac)
+end
+
+-- 지붕 위 걷기: 기와 메시는 충돌이 없다(MemberMeshes Box, Member 주석). 층마다 네 면에 보이지 않는 삼각 판을 깐다.
+-- 점은 메시 굽기 자료에서: 위 끝·모서리 = 추녀마루 선(hip) 처음·끝, 처마 = 단면 처마 끝 높이, 처마가 곧은(앙곡·안허리 없는) 구간 끝.
+-- ponytail: 면을 평면 삼각형 몇 개로 줄여 기와골 요철·처마 곡은 무시한다 (기와 등보다 최대 약 0.15 m 낮음). 발이 묻어 보이면 삼각형을 늘린다
+-- 저장된 Jibung이 있어도 짓도록 따로 된 루트 Model (init 건물 자리 목록에 있다)
+local function walk()
+	local folder = Instance.new("Model")
+	folder.Name = "JibungWalk"
+	folder.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 착지·걷기는 클라이언트 물리라 늘 내려가 있어야 한다
+	local thick = Units.studs(1)
+	-- 처마 끝 점 중 가장 바깥이 곧은 구간의 끝: 바깥 좌표(out)가 최소인 점들의 along 최대값
+	local function flat(eave: { { number } }, out: number, along: number): (number, number)
+		local lo = math.huge
+		for _, q in eave do
+			lo = math.min(lo, q[out])
+		end
+		local ext = 0
+		for _, q in eave do
+			if q[out] < lo + 1e-3 then
+				ext = math.max(ext, math.abs(q[along]))
+			end
+		end
+		return lo, ext
+	end
+	for _, layer in { "Lower", "Upper" } do
+		local front, side = (M :: any)[layer .. "JibungFront"], (M :: any)[layer .. "JibungSide"]
+		local prof = J[string.lower(layer)].profile
+		local y = prof[#prof][2]
+		local t, c = front.hip[1], front.hip[#front.hip]
+		local fz, fx = flat(front.eave, 3, 1)
+		local sx, sz = flat(side.eave, 1, 3)
+		local tris = {
+			-- 앞면(+Z)
+			{ { -t[1], t[2], t[3] }, { t[1], t[2], t[3] }, { fx, y, fz } },
+			{ { -t[1], t[2], t[3] }, { fx, y, fz }, { -fx, y, fz } },
+			{ { t[1], t[2], t[3] }, { c[1], c[2], c[3] }, { fx, y, fz } },
+			{ { -t[1], t[2], t[3] }, { -fx, y, fz }, { -c[1], c[2], c[3] } },
+			-- 옆면(+X). 상층은 위 끝이 한 점이라 셋째 삼각형이 없어진다
+			{ { t[1], t[2], t[3] }, { c[1], c[2], c[3] }, { sx, y, sz } },
+			{ { t[1], t[2], t[3] }, { sx, y, sz }, { sx, y, -sz } },
+			{ { t[1], t[2], t[3] }, { sx, y, -sz }, { t[1], t[2], -t[3] } },
+			{ { t[1], t[2], -t[3] }, { sx, y, -sz }, { c[1], c[2], -c[3] } },
+		}
+		for _, turn in { 1, -1 } do -- 뒷면·서쪽 면은 180° 돌림 (x, z 부호)
+			for _, tri in tris do
+				local v = {}
+				for i, q in tri do
+					v[i] = W(turn * q[1], q[2], turn * q[3])
+				end
+				triangle(folder, v[1], v[2], v[3], thick)
+			end
+		end
+	end
+	folder.Parent = workspace
+end
+
 return function()
+	if not workspace:FindFirstChild("JibungWalk") then
+		walk()
+	end
 	if workspace:FindFirstChild("Jibung") then
 		return
 	end
