@@ -8,6 +8,8 @@ local strings: { [string]: { ko: string, en: string } } = {
 	["time.now"] = { ko = "지금", en = "Now" },
 	["time.sunset"] = { ko = "노을", en = "Sunset" },
 	["time.night"] = { ko = "밤", en = "Night" },
+	["roofSplit.split"] = { ko = "분해해 보기", en = "Take it apart" },
+	["roofSplit.join"] = { ko = "조립하기", en = "Put it back together" },
 }
 
 local player = Players.LocalPlayer

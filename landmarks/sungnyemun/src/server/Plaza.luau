@@ -4,8 +4,10 @@
 -- 지형(Terrain)은 쓰지 않는다. 다듬기는 Studio에서. Part만 쓴다.
 --   광장 바닥: 건물 축 Z 1 m 띠마다 기울인 판 (바닥 높이가 Z로만 변한다)
 --   보도·도로: 연석선을 문루 중심에서 바깥으로 늘인 고리. 한 기울어진 면 위의 삼각형(WedgePart 2개)으로 채운다
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Tags = require(ReplicatedStorage.Core.Tags)
 local Units = require(ReplicatedStorage.Core.Units)
 local Plaza = require(ReplicatedStorage.Shared.Plaza)
 local site = require(ReplicatedStorage.Shared.Site)
@@ -245,6 +247,17 @@ return function()
 			p.Parent = model
 		end
 	end
+
+	-- 지붕 분해 표식: 낮은 돌 하나. 문루를 바라보게 세운다. 프롬프트는 클라이언트(core RoofSplit)가 태그로 찾아 단다
+	local mk = Plaza.roofSplitMarker
+	local base = world(mk.x, Plaza.floor(mk.z), mk.z)
+	local p = Instance.new("Part")
+	p.Name = "Pyoseok"
+	setup(p, true)
+	p.Size = Vector3.new(mk.size[1], mk.size[2], mk.size[3]) * S
+	p.CFrame = CFrame.lookAt(base, world(0, Plaza.floor(mk.z), 0)) + Vector3.new(0, p.Size.Y / 2, 0)
+	CollectionService:AddTag(p, Tags.ROOF_SPLIT_MARKER)
+	p.Parent = model
 
 	model.Parent = workspace
 end

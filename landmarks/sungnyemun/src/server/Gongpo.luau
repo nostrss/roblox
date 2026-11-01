@@ -10,6 +10,9 @@ local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local G = require(ReplicatedStorage.Shared.Gongpo)
 local setup = require(script.Parent.Member)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
+local Exhibit = require(ReplicatedStorage.Shared.GongpoSplit).exhibit
 
 local s = Units.studs
 local GWIHANDAE_THICKNESS = 0.151 -- S3 p.283 귀한대 초제공 151×224
@@ -173,7 +176,52 @@ local function floor(F: any, root: Instance, base: number, bays: { number }, sid
 	return count
 end
 
+-- 공포 모형: 문루 하층 마루 위 전시대(분해 표식)에 하층 주간포 한 벌. 실행할 때마다 새로 짓는다 (Edit에 저장돼 있으면 지우고).
+-- 지붕 분해 겹에 넣지 않는다(mark 안 함). 분해는 클라이언트 core Split이 전시대 태그로 찾아 돌린다 (Shared.GongpoSplit)
+local function exhibit()
+	local old = workspace:FindFirstChild("GongpoMohyeong")
+	if old then
+		old:Destroy()
+	end
+	local model = Instance.new("Model")
+	model.Name = "GongpoMohyeong"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 분해가 클라이언트에서 부재 전체를 옮기므로
+	local size = Vector3.new(Exhibit.size[1], Exhibit.size[2], Exhibit.size[3])
+	local floorY = D.level.pavilionFloor - D.level.ground
+	local stand = Instance.new("Part")
+	stand.Name = "Jeonsidae"
+	setup(stand, true)
+	stand.Size = size * s(1)
+	stand.CFrame = CFrame.new(s(Exhibit.x), s(floorY + size.Y / 2), s(Exhibit.z))
+	CollectionService:AddTag(stand, Tags.MODEL_SPLIT_MARKER)
+	stand.Parent = model
+	-- 전시 조명: 부재가 아닌 Attachment에 달아 분해 겹(전시대 Model 안 BasePart)에 섞이지 않게
+	local Lt = Exhibit.light
+	local att = Instance.new("Attachment")
+	att.Name = "JeonsiJomyeong"
+	local top = Vector3.new(0, s(size.Y / 2), 0)
+	local from = top + Vector3.new(s(Lt.from[1]), s(Lt.from[2]), s(Lt.from[3]))
+	att.CFrame = CFrame.lookAt(from, top + Vector3.new(0, s(Lt.at), 0))
+	att.Parent = stand
+	local spot = Instance.new("SpotLight")
+	spot.Face = Enum.NormalId.Front
+	spot.Angle = Lt.angle
+	spot.Range = s(Lt.range)
+	spot.Brightness = Lt.brightness
+	spot.Color = Lt.color
+	spot.Shadows = false -- 기구 앞 창방·보에 가려지지 않게
+	spot.Parent = att
+	local origin = Vector3.new(s(Exhibit.x), s(floorY + size.Y), s(Exhibit.z))
+	build(G.lower, "jugan", CFrame.lookAt(origin, origin + Exhibit.outward), model)
+	model.Parent = workspace
+end
+
 return function()
+	local folder = CollectionService:GetTagged(Tags.MEMBER_MESHES)[1]
+	if folder then
+		meshes = folder
+		exhibit()
+	end
 	local saved = workspace:FindFirstChild("Gongpo")
 	if saved then -- Edit에 저장된 공포: 다시 짓지 않고 Palette로 다시 칠만 한다 (저장 뒤 칠이 바뀌어도 맞게)
 		for _, p in saved:GetDescendants() do
@@ -181,17 +229,19 @@ return function()
 				setup(p)
 			end
 		end
+		(saved :: Model).ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
+		RoofSplit.mark(saved:FindFirstChild("Lower") :: Instance, "lower", Split, "gongpo")
+		RoofSplit.mark(saved:FindFirstChild("Upper") :: Instance, "upper", Split, "gongpo")
 		return
 	end
-	local folder = CollectionService:GetTagged(Tags.MEMBER_MESHES)[1]
 	if not folder then
 		warn("공포: MemberMeshes 태그 Folder가 없어 건너뜀 (landmarks/sungnyemun/meshes/*.obj 업로드 필요)")
 		return
 	end
-	meshes = folder
 	local L = D.level
 	local root = Instance.new("Model")
 	root.Name = "Gongpo"
+	root.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 
 	local lower = Instance.new("Model")
 	lower.Name = "Lower"
@@ -206,6 +256,8 @@ return function()
 	n = floor(G.upper, upper, L.upperColumnTop - L.ground + D.upperPyeongbangHeight, D.upperBays, D.upperSideBays, D.upperIntercolumnar)
 	-- S4 012: 상층 주간포 24 (정면 1·2·4·2·1, 측면 1·1) + 주상포 10 + 귀포 4
 	assert(n.jugan == 24 and n.jusang == 10 and n.gwi == 4, `상층 공포 수 {n.jugan}/{n.jusang}/{n.gwi}`)
+	RoofSplit.mark(lower, "lower", Split, "gongpo")
+	RoofSplit.mark(upper, "upper", Split, "gongpo")
 
 	root.Parent = workspace
 end

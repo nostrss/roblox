@@ -1,5 +1,5 @@
 --!strict
--- 시간대(하늘·빛·야간 조명)·환경음·도로 차량을 켜고, 스폰 직후 카메라를 문루 가운데 높이로 한 번 올려다보게 한다. 이후 조작은 기본 카메라 그대로.
+-- 시간대(하늘·빛·야간 조명)·환경음·도로 차량·지붕 분해·공포 모형 분해를 켜고, 스폰 직후 카메라를 문루 가운데 높이로 한 번 올려다보게 한다. 이후 조작은 기본 카메라 그대로.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -10,6 +10,9 @@ local TimeOfDay = require(ReplicatedStorage.Core.TimeOfDay)
 TimeOfDay.start(require(ReplicatedStorage.Shared.Looks)) -- 실제 서울 시각 + 지금/노을/밤 고르기, 야간 조명
 require(ReplicatedStorage.Core.Ambience).start(require(ReplicatedStorage.Shared.Soundscape)) -- 바람·차 소리·새·풀벌레, 홍예 울림
 require(ReplicatedStorage.Core.Traffic).start(require(ReplicatedStorage.Shared.Streets)) -- 세종대로·소월로 도로 차량 (엔진 소리가 위 Ambience 소리 묶음을 쓴다)
+require(ReplicatedStorage.Core.RoofSplit).start(require(ReplicatedStorage.Shared.RoofSplit)) -- 광장 표식에서 문루 지붕 분해 (내 화면에서만)
+local GongpoSplit = require(ReplicatedStorage.Shared.GongpoSplit)
+require(ReplicatedStorage.Core.Split).start(GongpoSplit.settings, require(ReplicatedStorage.Core.Tags).MODEL_SPLIT_MARKER, GongpoSplit.collect) -- 문루 하층 전시대에서 공포 모형 분해
 
 local target = Units.studs(1) * (D.site.position + Vector3.new(0, (D.level.ridgeTop - D.level.ground) / 2, 0))
 
