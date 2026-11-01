@@ -2,8 +2,10 @@
 -- 숭례문 석축(육축): 몸채, 네 면 무사석, 홍예·통로·반자, 성문, 여장, 석누조, 동·서 계단 (데이터 Shared.Yukchuk·WallStones).
 -- 건물 축으로 짓고 init.server가 건물 자리로 돌린다(ADR 0004). Part만 쓴다. 홍예 곡선은 홍예석 한 장씩(11장)으로 줄였다.
 -- 높이 h = 통로 바닥(지면, Y 0) 위 m. 도면 level은 y()로 바꾼다.
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Tags = require(ReplicatedStorage.Core.Tags)
 local Units = require(ReplicatedStorage.Core.Units)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local Y = require(ReplicatedStorage.Shared.Yukchuk)
@@ -211,14 +213,42 @@ return function()
 	block("YukchukBody", -W2, hc, zNorth, W2, H, zDoor)
 
 	-- 성문: 상둔테 아래 두 짝, 통로 벽 쪽으로 열어 둔다. 바깥면(닫혔을 때 남쪽)에 철엽
+	-- 문짝은 회차 때 클라이언트 화면에서 돈다(core Ceremony) → 부딪힘을 끄고, 열린 자리 부딪힘은 보이지 않는 PanmunWall이 늘 맡는다
 	local G = Y.gate
 	local dz = zDoor - G.dunte.width / 2
 	block("Dunte", -G.dunte.length / 2, G.leafHeight, zDoor - G.dunte.width, G.dunte.length / 2, G.leafHeight + G.dunte.height, zDoor)
 	for sx = -1, 1, 2 do
 		local hinge = CFrame.new(sx * G.leafWidth, 0.02, dz) * CFrame.Angles(0, math.rad(-sx * G.openAngle), 0)
-		part("Seongmun", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, -G.thickness / 2), Vector3.new(G.leafWidth, G.leafHeight, G.thickness))
-		part("Cheoryeop", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, G.plate / 2), Vector3.new(G.leafWidth, G.leafHeight, G.plate))
+		local hingeStuds = CFrame.new(hinge.Position * S) * hinge.Rotation
+		local function leaf(name: string, cf: CFrame, size: Vector3): BasePart
+			local p = part(name, cf, size)
+			p.CanCollide = false
+			p:SetAttribute("Hinge", p.CFrame:ToObjectSpace(hingeStuds))
+			p:SetAttribute("Swing", sx * G.openAngle)
+			CollectionService:AddTag(p, Tags.GATE_LEAF)
+			return p
+		end
+		leaf("Seongmun", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, -G.thickness / 2), Vector3.new(G.leafWidth, G.leafHeight, G.thickness))
+		local plate = leaf("Cheoryeop", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, G.plate / 2), Vector3.new(G.leafWidth, G.leafHeight, G.plate))
+		if G.tile.texture ~= "" then
+			-- 철판·광두정 타일: 바깥면(닫혔을 때 남쪽)에 파트 하나로 반복. 이음이 양 경첩에서 대칭이 되게 밀어 놓는다
+			local t = Instance.new("Texture")
+			t.Texture = G.tile.texture
+			t.Face = Enum.NormalId.Back
+			t.StudsPerTileU = Units.studs(G.tile.width)
+			t.StudsPerTileV = Units.studs(G.tile.height)
+			t.OffsetStudsU = Units.studs(if sx < 0 then G.tile.hingeSeam else G.leafWidth - G.tile.hingeSeam)
+			t.Parent = plate
+		end
+		local x0, x1 = math.min(sx * G.leafWidth, sx * P.width / 2), math.max(sx * G.leafWidth, sx * P.width / 2)
+		local wall = block("PanmunWall", x0, 0, dz - G.leafWidth, x1, G.leafHeight, dz) :: BasePart
+		wall.Transparency = 1
 	end
+	-- 막이: 닫힌 문짝 자리에 통로 폭 그대로. 평소에는 꺼 두고 닫힘 구간에 서버가 켠다 (core Ceremony)
+	local barrier = block("PanmunMagi", -P.width / 2, 0, dz - G.thickness, P.width / 2, hc, dz + G.plate) :: BasePart
+	barrier.Transparency = 1
+	barrier.CanCollide = false
+	CollectionService:AddTag(barrier, Tags.GATE_BARRIER)
 
 	-- 반자널: 성문 자리(상둔테 위)부터 북쪽으로 동서로 걸친 널 (홍예 반자)
 	local pk = P.plank

@@ -14,4 +14,9 @@ return {
 	MODEL_SPLIT_MARKER = "ModelSplitMarker", -- 모형 분해: 붙인 전시대와 같은 Model 안 부재가 밑면 높이 겹별로 (Place 데이터 collect)
 	-- 발사대(core Launcher): 이 태그가 붙은 Model이 있으면 코드가 상자로 짓는 대신 그것을 쓴다 (Studio 모델로 바꿀 때 붙인다)
 	LAUNCHER = "Launcher",
+	-- 회차(core Ceremony)에서 움직이는 문 부재. 붙인 파트마다 Attribute: Hinge(파트 기준 경첩 CFrame), Swing(열림 → 닫힘 Y 회전 °).
+	-- 서버 값은 열린 자리 그대로이고 클라이언트 화면에서만 돈다. 사람을 밀지 않게 CanCollide를 끈 파트에 붙인다
+	GATE_LEAF = "GateLeaf",
+	-- 닫힘 구간에 서버가 CanCollide를 켜는 보이지 않는 막이 파트. 파트 Z가 두께 방향이다
+	GATE_BARRIER = "GateBarrier",
 }
