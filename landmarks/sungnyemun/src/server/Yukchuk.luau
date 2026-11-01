@@ -225,7 +225,18 @@ return function()
 	local pw1 = P.banja.length / pk.count
 	for i = 0, pk.count - 1 do
 		local z1 = zDoor - i * pw1
-		block("Banjaneol", -pk.length / 2, hc - pk.thickness, z1 - pw1 + 0.005, pk.length / 2, hc, z1 - 0.005)
+		local plank = block("Banjaneol", -pk.length / 2, hc - pk.thickness, z1 - pw1 + 0.005, pk.length / 2, hc, z1 - 0.005)
+		-- 쌍룡도: 널마다 같은 그림을 자기 자리만큼 밀어 붙인다 (이음선은 그대로). 그림 폭은 보이는 면(통로 폭), 양끝은 벽에 묻힌다
+		if plank and P.banja.painting ~= "" then
+			local t = Instance.new("Texture")
+			t.Texture = P.banja.painting
+			t.Face = Enum.NormalId.Bottom
+			t.StudsPerTileU = P.width * S
+			t.StudsPerTileV = P.banja.length * S
+			t.OffsetStudsU = -(pk.length - P.width) / 2 * S
+			t.OffsetStudsV = i * pw1 * S
+			t.Parent = plank
+		end
 	end
 
 	-- 통로 바닥 판석: 줄마다 반 장씩 엇갈려 깐다. 윗면은 광장 바닥보다 2 cm 높게 (겹친 면 깜빡임 방지)
