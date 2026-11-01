@@ -1,8 +1,10 @@
 --!strict
 -- 주변 건물 실루엣 (데이터 Shared.Silhouette). 창·간판 없는 상자 하나씩, 세계 좌표에 바로 놓는다 — 건물 자리로 돌리지 않는다.
 -- 걸어 갈 수 없는 배경이라 부딪힘·조회·그림자를 모두 끈다(모바일 부담). 바닥은 둘레 보도 면(Plaza.sidewalk)에 1 m 묻는다.
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Tags = require(ReplicatedStorage.Core.Tags)
 local Units = require(ReplicatedStorage.Core.Units)
 local Plaza = require(ReplicatedStorage.Shared.Plaza)
 local boxes = require(ReplicatedStorage.Shared.Silhouette)
@@ -12,6 +14,11 @@ local setup = require(script.Parent.Member)
 local S = Units.studs(1)
 local SINK = 1 -- 상자 바닥을 보도 면 아래로 묻는 깊이 (기운 면에서 뜨지 않게)
 local TONES = { "SilhouetteA", "SilhouetteB", "SilhouetteC" }
+
+-- 창 불빛: 광장 쪽 한 면에만, 층(3.5 m)마다 Neon 띠 하나를 몇 층 걸러 켠다. 광원 없음 — 태그로 낮에는 투명해진다.
+-- ponytail: 창 하나하나가 아닌 층 띠, 켜진 층은 번호로 정한 고정 무늬. 파트 수가 문제면 LIT 비율을 낮춘다
+local FLOOR, BAND, LIT = 3.5, 1.3, 0.35
+local WINDOW = { Color3.fromRGB(132, 108, 72), Color3.fromRGB(92, 102, 118) } -- 근사: 흐린 주황·푸른 형광등 (Bloom에 번지지 않게 어둡게)
 
 -- 건물 축 (x, z) 점이 다각형 안인가
 local function inside(x: number, z: number, poly: { { number } }): boolean
@@ -69,6 +76,31 @@ return function()
 		p.Size = Vector3.new(u, top - bottom, v) * S
 		p.CFrame = frame * CFrame.new(0, (bottom + top) / 2 * S, 0)
 		p.Parent = model
+
+		-- 상자 네 면 가운데 바깥 방향이 문루(원점) 쪽에 가장 가까운 면
+		local best, face, width, depth = -math.huge, Vector3.xAxis, v, u
+		for _, f in { { Vector3.xAxis, v, u }, { -Vector3.xAxis, v, u }, { Vector3.zAxis, u, v }, { -Vector3.zAxis, u, v } } do
+			local n = frame:VectorToWorldSpace(f[1] :: Vector3)
+			local d = n:Dot(-frame.Position.Unit)
+			if d > best then
+				best, face, width, depth = d, f[1] :: Vector3, f[2] :: number, f[3] :: number
+			end
+		end
+		for k = 1, math.floor((top - lo - 2) / FLOOR) do
+			if (i * 7 + k * 13) % 100 < LIT * 100 then
+				local w = Instance.new("Part")
+				w.Name = "SilhouetteWindow"
+				setup(w)
+				w.CastShadow = false
+				w.Material = Enum.Material.Neon
+				w.Color = WINDOW[(i + k) % 2 + 1]
+				w.Size = Vector3.new(width - 1, BAND, 0.1) * S
+				local at = face * (depth / 2 + 0.05) + Vector3.new(0, lo + k * FLOOR, 0)
+				w.CFrame = frame * CFrame.lookAt(at * S, (at + face) * S)
+				CollectionService:AddTag(w, Tags.NIGHT_LIGHT)
+				w.Parent = model
+			end
+		end
 	end
 	model.Parent = workspace
 end
