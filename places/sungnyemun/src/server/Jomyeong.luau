@@ -48,8 +48,53 @@ local EAVES = {
 }
 local EAVE = { brightness = 2, range = 16, angle = 80 }
 
--- 가로등 { x, z } — 정면 흙 마당(X ±13) 양옆 잔디 가장자리. 근사: 실제 가로등 자리 자료 없음
-local LAMPS = { { -15, 28 }, { 15, 28 }, { -15, 50 }, { 15, 50 } }
+-- 광장 바닥(연석 안쪽 보도 띠 안) 다각형과, 점이 그 안에서 모든 변으로부터 margin m 이상 떨어졌나 (건물 축)
+local floorPoly = {}
+for i = 1, #Plaza.curb do
+	floorPoly[i] = { Plaza.radial(i, -Plaza.bandWidth) }
+end
+local function onFloor(x: number, z: number, margin: number): boolean
+	if not Plaza.inside(x, z, floorPoly) then
+		return false
+	end
+	for i, a in floorPoly do
+		local b = floorPoly[i % #floorPoly + 1]
+		local dx, dz = b[1] - a[1], b[2] - a[2]
+		local t = math.clamp(((x - a[1]) * dx + (z - a[2]) * dz) / (dx * dx + dz * dz), 0, 1)
+		if math.sqrt((a[1] + dx * t - x) ^ 2 + (a[2] + dz * t - z) ^ 2) < margin then
+			return false
+		end
+	end
+	return true
+end
+
+-- 가로등 { x, z } — 정면 흙 마당(X ±13) 양옆 잔디 가장자리. 근사: 실제 가로등 자리 자료 없음.
+-- 광장은 남쪽(+Z)으로 갈수록 서쪽이 좁아진다(Z 50에서 서쪽 연석 X −14) → 바닥 가장자리에서 2 m 안이 되도록 가운데 쪽으로 당긴다
+local LAMP_MARGIN = 2
+local LAMPS = {}
+for _, xz in { { -15, 28 }, { 15, 28 }, { -15, 50 }, { 15, 50 } } do
+	local x, z = xz[1], xz[2]
+	while not onFloor(x, z, LAMP_MARGIN) and math.abs(x) > 0.5 do
+		x -= math.sign(x) * 0.5
+	end
+	table.insert(LAMPS, { x, z })
+end
+
+-- 시작 검사: 가로등은 광장 바닥 가장자리에서 2 m 안, 투광등·처마 조명은 광장 바닥 위 (도로·보도에 서지 않는다)
+for _, l in LAMPS do
+	assert(onFloor(l[1], l[2], LAMP_MARGIN), `가로등 ({l[1]}, {l[2]})이 광장 바닥 가장자리 2 m 안에 없다`)
+end
+for _, s in SPOTS do
+	local at = s[1] :: Vector3
+	assert(onFloor(at.X, at.Z, 0), `투광등 ({at.X}, {at.Z})이 광장 바닥 밖이다`)
+end
+for _, e in EAVES do
+	for _, sx in { 1, -1 } do
+		for _, sz in { 1, -1 } do
+			assert(onFloor(sx * e[2], sz * e[1], 0), `처마 조명 끝 ({sx * e[2]}, {sz * e[1]})이 광장 바닥 밖이다`)
+		end
+	end
+end
 local POLE = 4 -- 근사: 가로등 높이(m)
 
 local model: Model

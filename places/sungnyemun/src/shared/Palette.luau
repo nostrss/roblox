@@ -35,6 +35,9 @@ local paint: { [string]: Paint } = {
 	asphalt = { material = Enum.Material.Asphalt, color = Color3.fromRGB(58, 58, 60) }, -- 차도
 	ongbyeok = { material = Enum.Material.Granite, color = Color3.fromRGB(165, 160, 152) }, -- 광장 가장자리 석축 옹벽
 	hoengdan = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(230, 230, 226) }, -- 횡단보도 흰 줄
+	-- 차선 (근사: 색값은 눈대중. 흰 줄은 횡단보도와 같은 색)
+	chaseonYellow = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(230, 170, 40) }, -- 중앙선
+	chaseonBlue = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(40, 90, 200) }, -- 버스전용차로 경계
 	-- 주변 건물 실루엣: 창·간판 없는 무채색 덩어리 세 톤 (근사: 색 자료 없음, 문루보다 눈에 띄지 않게 낮은 채도)
 	silhouetteA = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(178, 176, 170) },
 	silhouetteB = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(156, 156, 154) },
@@ -65,6 +68,7 @@ local byName: { [string]: string } = {
 	PavilionBase = "gidan",
 	SeongBody = "seongdol", SeongBack = "jandi", Yeojang = "yeojangseok", Miseok = "yeojangseok", Okgae = "okgaeseok",
 	Masato = "masato", Bakseok = "bakseok", Jandi = "jandi", Bodo = "bodo", Asphalt = "asphalt", Ongbyeok = "ongbyeok", Hoengdan = "hoengdan",
+	ChaseonWhite = "hoengdan", ChaseonYellow = "chaseonYellow", ChaseonBlue = "chaseonBlue",
 	SilhouetteA = "silhouetteA", SilhouetteB = "silhouetteB", SilhouetteC = "silhouetteC",
 }
 
