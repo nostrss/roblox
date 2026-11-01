@@ -29,3 +29,7 @@ end
 
 -- 화차: 지붕이 제자리에 돈 뒤에 착지점을 광선으로 찾으므로 맨 끝에 (core Launcher, 데이터 Shared.Hwacha)
 require(ReplicatedStorage.Core.Launcher).serve(require(ReplicatedStorage.Shared.Hwacha))
+
+-- 개폐의식: 재생 준비(serve)와 언제 시작하는가(startOnRequest, 당분간 버튼)를 나눠 부른다 (core Ceremony, 데이터 Shared.Gaepye)
+local Ceremony = require(ReplicatedStorage.Core.Ceremony)
+Ceremony.startOnRequest(Ceremony.serve(require(ReplicatedStorage.Shared.Gaepye)))
