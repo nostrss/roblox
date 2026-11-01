@@ -4,7 +4,7 @@
 -- 시각은 서버 시계(GetServerTimeNow)로 잰다 — 방문자 기기 시계가 틀려도 모두 같은 서울 시각을 본다.
 -- 색조는 버튼이 아니라 해 높이로 정한다 → "지금"이 실제 노을 무렵이면 노을 색조가 된다.
 --   낮 색조 = Studio에 둔 Lighting·효과 값 그대로(시작할 때 읽는다). 노을·밤 색조는 Place가 넘긴다. Ambient는 건드리지 않는다.
--- 야간 조명은 Tags.NIGHT_LIGHT로 찾는다 (Studio에서 더하거나 옮긴 것도 태그만 붙이면 같이 켜고 끈다).
+-- 야간 조명은 Tags.NIGHT_LIGHT로 찾는다 (Studio에서 더하거나 옮긴 것도 태그만 붙이면 같이 켜고 끈다). Tags.DAY_LIGHT는 그 반대로 켜고 끈다.
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -33,30 +33,32 @@ local CLOCK = { sunset = 17.6, night = 21 }
 local SUNSET_SUN, NIGHT_SUN, LIGHTS_SUN = 0.25, -0.06, 0.03
 local FADE = TweenInfo.new(4, Enum.EasingStyle.Sine) -- 색조·조명이 바뀌는 시간
 
-local lit = false
+local lit = false -- 야간 조명이 켜진 상태인가
+local LIGHT_TAGS = { [Tags.NIGHT_LIGHT] = false, [Tags.DAY_LIGHT] = true } -- 태그 → 야간 조명과 반대로 켜는가
 
 local function switchable(i: Instance): boolean
 	return i:IsA("Light") or (i:IsA("BasePart") and i.Material == Enum.Material.Neon)
 end
 
--- 조명 하나를 지금 상태(lit)로. info가 없으면 바로
-local function set(i: Instance, info: TweenInfo?)
+-- 조명 하나를 지금 상태(lit, inverse면 그 반대)로. info가 없으면 바로
+local function set(i: Instance, inverse: boolean, info: TweenInfo?)
 	local isLight = i:IsA("Light")
+	local on = lit ~= inverse
 	-- 켜진 값(Studio·서버 값)을 처음 볼 때 인스턴스 속성에 적어 둔다 (클라이언트에만). 약한 키 표는 인스턴스 래퍼가 수거돼 값을 잃는다
 	local full = i:GetAttribute("LitValue") :: number?
 	if full == nil then
 		full = if isLight then (i :: Light).Brightness else (i :: BasePart).Transparency
 		i:SetAttribute("LitValue", full)
 	end
-	local goal = if isLight then { Brightness = if lit then full else 0 } else { Transparency = if lit then full else 1 }
-	if isLight and lit then
+	local goal = if isLight then { Brightness = if on then full else 0 } else { Transparency = if on then full else 1 }
+	if isLight and on then
 		(i :: Light).Enabled = true
 	end
 	if info then
 		local tween = TweenService:Create(i, info, goal)
-		if isLight and not lit then
+		if isLight and not on then
 			tween.Completed:Connect(function(state)
-				if state == Enum.PlaybackState.Completed and not lit then
+				if state == Enum.PlaybackState.Completed and lit == inverse then
 					(i :: Light).Enabled = false -- 꺼진 조명은 계산에서도 뺀다 (모바일)
 				end
 			end)
@@ -67,7 +69,7 @@ local function set(i: Instance, info: TweenInfo?)
 			(i :: any)[k] = v
 		end
 		if isLight then
-			(i :: Light).Enabled = lit
+			(i :: Light).Enabled = on
 		end
 	end
 end
@@ -207,28 +209,36 @@ function TimeOfDay.start(place: Looks)
 		local l = y < LIGHTS_SUN
 		if l ~= lit or first then
 			lit = l
-			for _, root in CollectionService:GetTagged(Tags.NIGHT_LIGHT) do
-				eachSwitchable(root, function(i)
-					set(i, info)
-				end)
+			for tag, inverse in LIGHT_TAGS do
+				for _, root in CollectionService:GetTagged(tag) do
+					eachSwitchable(root, function(i)
+						set(i, inverse, info)
+					end)
+				end
 			end
 		end
 		first = false
 	end
 
 	-- 스트리밍으로 들어오는(다시 들어오는) 조명은 지금 상태로 바로 맞춘다
-	local function arrived(root: Instance)
-		eachSwitchable(root, set)
+	local function arrived(root: Instance, inverse: boolean)
+		eachSwitchable(root, function(i)
+			set(i, inverse)
+		end)
 		root.DescendantAdded:Connect(function(d)
 			if switchable(d) then
-				set(d)
+				set(d, inverse)
 			end
 		end)
 	end
 	update()
-	CollectionService:GetInstanceAddedSignal(Tags.NIGHT_LIGHT):Connect(arrived)
-	for _, root in CollectionService:GetTagged(Tags.NIGHT_LIGHT) do
-		arrived(root)
+	for tag, inverse in LIGHT_TAGS do
+		CollectionService:GetInstanceAddedSignal(tag):Connect(function(root)
+			arrived(root, inverse)
+		end)
+		for _, root in CollectionService:GetTagged(tag) do
+			arrived(root, inverse)
+		end
 	end
 	gui:GetAttributeChangedSignal("Mode"):Connect(update)
 	task.spawn(function()

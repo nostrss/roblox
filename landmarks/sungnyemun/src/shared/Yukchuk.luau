@@ -33,7 +33,8 @@ return {
 		ceiling = -1.241, -- 근사: 북측 홍예 정점에 맞춤 (S4 021 단면 도면측정 약 −1.6~−1.3)
 		-- 홍예 반자: 성문 자리(둔테 위 포함)부터 북쪽으로 남북 7.857 × 동서 5.463 (S7 p.455), 반자널 19장 (S4 030).
 		-- 둔테 위 2장은 둔테 설치 뒤 얹었다 (S7 p.335) → 둔테가 반자 바로 밑에 든다
-		banja = { length = 7.857, width = 5.463 },
+		-- painting: 쌍룡도 텍스처 에셋 (S27). 비어 있으면 먹 바탕만 (textures/ssangryongdo.png 를 올린 뒤 ID를 적는다)
+		banja = { length = 7.857, width = 5.463, painting = "rbxassetid://110456409519435" }, -- textures/ssangryongdo.png (2026-11-01 업로드)
 		-- 널 너비는 반자 길이 ÷ 19 = 0.414 (S7 p.335 천장목 너비 340~494). 길이·두께는 S4 066 부재표 5900 × 185 (01번 너비 315는 한 장 값)
 		plank = { count = 19, thickness = 0.185, length = 5.9 },
 		slab = { length = 1.09, width = 0.405, thickness = 0.15 }, -- 통로 바닥 판석 (S4 058 판석_01: 1091 × 405 × 150)

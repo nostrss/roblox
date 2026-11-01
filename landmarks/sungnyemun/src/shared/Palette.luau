@@ -65,7 +65,7 @@ local byName: { [string]: string } = {
 	Maru = "yangseong", Yeonmaru = "yangseong",
 	Japsang = "wajae", Yongdu = "wajae", Chwidu = "wajae", Tosu = "wajae",
 	-- 육축 (Yukchuk). 성문은 석간주에 들기름칠 (S4 064 부재표, S7 p.456), 둔테 칠은 자료 없음 → 석간주 근사.
-	-- 반자널 = 홍예천장: 먹 바탕에 쌍룡도·오색운문 (S7 p.455). 그림은 아직 없다
+	-- 반자널 = 홍예천장: 먹 바탕에 쌍룡도·오색운문 (S7 p.455). 그림은 사진 텍스처로 입힌다 (Yukchuk.passage.banja.painting, S27)
 	YukchukBody = "seokchuk", Stone = "myeonseok", Hongyeseok = "myeonseok", Nujo = "myeonseok",
 	Dideumdol = "myeonseok", Somaetdol = "myeonseok", Panseok = "panseok",
 	YeojangJeon = "jeondol", Okgaejeon = "giwa", -- 여장 전돌·옥개전 (S7 p.198 옥개전은 기와처럼 구운 것)
