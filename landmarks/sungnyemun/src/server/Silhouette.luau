@@ -66,7 +66,7 @@ local function dress(p: BasePart, style: Style, tileU: number, tileV: number, sh
 				g.Name = "Lit"
 				g.Face = face
 				g.LightInfluence = 0
-				g.Brightness = 1.15
+				g.Brightness = 0.75
 				g.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
 				g.CanvasSize = Vector2.new(math.ceil(w * LIT_PPM), math.ceil(h * LIT_PPM))
 				g.Enabled = false

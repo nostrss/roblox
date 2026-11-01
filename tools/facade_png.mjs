@@ -128,9 +128,9 @@ const COOL = [hex(0xdff0ff), hex(0xeef6ff), hex(0xcfe6f6)];
 // 켜진 창 고르기 (건물마다 타일을 공유하므로 패턴은 몇 층씩 뭉치게: 사무실은 한 층이 함께 켜진다)
 function litColor(floorOn) {
   if (rnd() > floorOn) return null;
-  const c = rnd() < 0.55 ? COOL[Math.floor(rnd() * COOL.length)] : WARM[Math.floor(rnd() * WARM.length)];
-  const dim = 0.55 + rnd() * 0.45;
-  return [c[0] * dim, c[1] * dim, c[2] * dim, 1];
+  const c = rnd() < 0.35 ? COOL[Math.floor(rnd() * COOL.length)] : WARM[Math.floor(rnd() * WARM.length)];
+  const dim = 0.32 + rnd() * 0.4; // 밤 창은 하얗게 날리지 않게 어둡게
+  return [c[0] * dim, c[1] * dim, c[2] * dim, 0.9];
 }
 
 // 격자 입면 공통: 벽 → 칸마다 창. window(cx0, cy0, cx1, cy1)은 칸 안 창 사각형 비율
@@ -139,7 +139,7 @@ function gridFacade(name, opts) {
   day.rect(0, 0, 1, 1, wall(opts.wall, opts.amp, opts.streak));
   const F = 8, B = 8;
   for (let f = 0; f < F; f++) {
-    const floorOn = rnd() < 0.5 ? 0.15 : rnd() < 0.5 ? 0.45 : 0.75;
+    const floorOn = rnd() < 0.5 ? 0.06 : rnd() < 0.6 ? 0.25 : 0.55;
     for (let b = 0; b < B; b++) {
       const cx = b / B, cy = f / F;
       const [ax, ay, bx, by] = opts.window;
@@ -226,7 +226,7 @@ gridFacade("concrete", {
       const x0 = (b + 0.1) / 8, x1 = (b + 0.9) / 8, y0 = (f + 0.32) / 8, y1 = (f + 0.9) / 8;
       day.rect(x0, y0, x1, y1, [0.12, 0.17, 0.2, 0.6]);
       day.rect((x0 + x1) / 2 - 0.0012, y0, (x0 + x1) / 2 + 0.0012, y1, [0.35, 0.35, 0.36, 1]);
-      const lit = litColor(0.4);
+      const lit = litColor(0.25);
       if (lit) night.rect(x0, y0, x1, y1, lit);
     }
     // 간판: 층 위쪽 띠를 칸 몇 개씩 묶어 덮는다
@@ -237,14 +237,14 @@ gridFacade("concrete", {
         const c = COLORS[Math.floor(rnd() * COLORS.length)];
         const x0 = b / 8 + 0.004, x1 = Math.min(1, (b + w) / 8) - 0.004, y0 = (f + 0.03) / 8, y1 = (f + 0.28) / 8;
         day.rect(x0, y0, x1, y1, [...c, 1]);
-        night.rect(x0, y0, x1, y1, [c[0] * 0.9 + 0.1, c[1] * 0.9 + 0.1, c[2] * 0.9 + 0.1, 1]);
+        night.rect(x0, y0, x1, y1, [c[0] * 0.55, c[1] * 0.55, c[2] * 0.55, 1]);
         const ink = c[0] + c[1] + c[2] > 1.6 ? [0.1, 0.1, 0.12, 1] : [0.97, 0.97, 0.94, 1];
         // 글자 덩어리
         const n = 3 + Math.floor(rnd() * 5);
         for (let k = 0; k < n; k++) {
           const gx = mix(x0, x1, (k + 0.2) / n), gw = ((x1 - x0) / n) * 0.62;
           day.rect(gx, y0 + 0.006, gx + gw, y1 - 0.006, ink);
-          night.rect(gx, y0 + 0.006, gx + gw, y1 - 0.006, ink);
+          night.rect(gx, y0 + 0.006, gx + gw, y1 - 0.006, ink.map((q, n) => (n < 3 ? q * 0.6 : q)));
         }
       }
       b += w;
@@ -266,18 +266,18 @@ gridFacade("concrete", {
     const x0 = b / 8 + 0.004, x1 = Math.min(1, (b + w) / 8) - 0.004;
     const c = COLORS[Math.floor(rnd() * COLORS.length)];
     day.rect(x0, 0.03, x1, 0.27, [...c, 1]);
-    night.rect(x0, 0.03, x1, 0.27, [...c.map((v) => v * 0.9 + 0.1), 1]);
+    night.rect(x0, 0.03, x1, 0.27, [...c.map((v) => v * 0.65), 1]);
     const ink = c[0] + c[1] + c[2] > 1.6 ? [0.1, 0.1, 0.12, 1] : [0.97, 0.97, 0.94, 1];
     const n = 2 + Math.floor(rnd() * 4);
     for (let k = 0; k < n; k++) {
       const gx = mix(x0, x1, (k + 0.25) / n), gw = ((x1 - x0) / n) * 0.5;
       day.rect(gx, 0.07, gx + gw, 0.23, ink);
-      night.rect(gx, 0.07, gx + gw, 0.23, ink);
+      night.rect(gx, 0.07, gx + gw, 0.23, ink.map((q, n) => (n < 3 ? q * 0.7 : q)));
     }
     day.rect(x0, 0.31, x1, 0.97, [0.16, 0.22, 0.26, 0.5]);
     const on = rnd() < 0.85;
     const warm = WARM[Math.floor(rnd() * WARM.length)];
-    if (on) night.rect(x0, 0.31, x1, 0.97, [warm[0], warm[1], warm[2], 1]);
+    if (on) night.rect(x0, 0.31, x1, 0.97, [warm[0] * 0.7, warm[1] * 0.68, warm[2] * 0.62, 1]);
     for (let m = 0; m <= w; m++) {
       const mx = mix(x0, x1, m / w);
       day.rect(mx - 0.0015, 0.31, mx + 0.0015, 0.97, [0.3, 0.3, 0.32, 1]);
@@ -289,35 +289,85 @@ gridFacade("concrete", {
   night.save("lit_shop");
 }
 
-// 박석: 크기가 조금씩 다른 화강석 판을 켜로 깐 바닥. 타일 하나 = 4 m × 4 m (server Plaza와 같아야 한다)
+// 박석: 크기가 조금씩 다른 화강석 판을 켜로 깐 바닥. 타일 하나 = 4 m × 4 m (Shared.Facades와 같아야 한다).
+// 줄눈은 굵고 어두우면 벽돌처럼 보여 돌과 비슷한 색으로 가늘게 둔다
 {
   const img = new Img(SIZE, SIZE);
   img.rect(0, 0, 1, 1, (u, v) => {
-    const k = 0.6 + fine(u, v) * 0.2;
-    return [0.3 * k + 0.06, 0.29 * k + 0.06, 0.27 * k + 0.05, 1];
+    const k = 0.46 + fine(u, v) * 0.12;
+    return [k, k * 0.98, k * 0.94, 1];
   });
-  const ROWS = 9;
+  const ROWS = 7;
   for (let r = 0; r < ROWS; r++) {
     const y0 = r / ROWS, y1 = (r + 1) / ROWS;
-    let x = rnd() * 0.08;
-    const start = x;
-    while (x < start + 1) {
-      const w = Math.min(0.1 + rnd() * 0.13, start + 1 - x);
-      const tone = 0.56 + rnd() * 0.22;
-      const warm = rnd() * 0.04;
-      const j = () => 0.003 + rnd() * 0.004;
+    const start = rnd() * 0.1;
+    let x = start;
+    while (x < start + 1 - 0.001) {
+      const w = Math.min(0.13 + rnd() * 0.17, start + 1 - x);
+      const tone = 0.6 + rnd() * 0.13;
+      const warm = rnd() * 0.025;
+      const j = () => 0.0012 + rnd() * 0.0016;
       const ax = x + j(), bx = x + w - j(), ay = y0 + j(), by = y1 - j();
       img.rect(ax, ay, bx, by, (u, v) => {
         const g = fine(u, v);
-        const speck = n3(u * 256 * 3 % 256, v * 256 * 3 % 256);
-        const k = tone * (0.86 + g * 0.26) + (speck > 0.8 ? 0.08 : speck < 0.2 ? -0.07 : 0);
-        return [k + warm, k + warm * 0.5, k - warm * 0.4, 1];
+        const speck = n3((u * 768) % 256, (v * 768) % 256);
+        const k = tone * (0.88 + g * 0.22) + (speck > 0.82 ? 0.05 : speck < 0.18 ? -0.05 : 0);
+        return [k + warm, k + warm * 0.5, k - warm * 0.5, 1];
       });
-      // 판 가장자리 음영 (닳은 모서리)
-      img.rect(ax, by - 0.003, bx, by, Object.assign([0.1, 0.1, 0.1, 0.3], { over: true }));
-      img.rect(ax, ay, bx, ay + 0.002, Object.assign([1, 1, 1, 0.1], { over: true }));
       x += w;
     }
   }
   img.save("bakseok");
+}
+
+// 판문 철엽: 녹슨 철판과 광두정. 타일 = 판 4장 × 12줄 (Shared.Yukchuk gate.tile).
+// 판 크기·광두정 자리는 S4 064 치수: 판 486.4 × 162.5 mm, 아랫이음에서 46 mm 위에 6개, 116 mm 위에 3개, 지름 33 mm.
+// 색은 사진(S34)을 눈으로만 보고 정했다: 어두운 갈회색 바탕에 판마다 다른 녹.
+{
+  const COLS = 4, ROWS = 12;
+  const tone = Array.from({ length: COLS * ROWS }, () => [rnd(), rnd(), rnd()]);
+  const STUDS = [[60, 46], [135, 46], [211, 46], [286, 46], [361, 46], [436, 46], [135, 116], [286, 116], [436, 116]];
+  const R = 16.5, PW = 486.4, PH = 162.5;
+  const img = new Img(SIZE, SIZE);
+  const L = [-0.35, 0.62, 0.7]; // 왼쪽 위 빛
+  // 높이: 이음에서 내려앉고 광두정에서 솟는다. mm 좌표
+  const height = (mx, my) => {
+    const dx = Math.min(mx, PW - mx), dy = Math.min(my, PH - my);
+    const edge = Math.min(dx, dy);
+    let h = Math.min(edge / 5, 1) * 2;
+    for (const s of STUDS) {
+      const d2 = (mx - s[0]) ** 2 + (my - s[1]) ** 2;
+      if (d2 < R * R) h = Math.max(h, 2 + Math.sqrt(R * R - d2) * 0.9);
+    }
+    return h;
+  };
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const u = x / SIZE, v = y / SIZE;
+      const col = Math.floor(u * COLS), row = Math.floor(v * ROWS);
+      const mx = (u * COLS - col) * PW, my = (1 - (v * ROWS - row)) * PH; // my = 판 아래에서 위로
+      const e = 1.2;
+      const nx = (height(mx - e, my) - height(mx + e, my)) / (2 * e);
+      const ny = (height(mx, my - e) - height(mx, my + e)) / (2 * e);
+      const nz = 1;
+      const len = Math.hypot(nx, ny, nz);
+      const lit = clamp((nx * L[0] + ny * L[1] + nz * L[2]) / len);
+      const [t0, t1, t2] = tone[row * COLS + col];
+      const rust = clamp(fine(u, v) * 1.5 - 0.35 + t0 * 0.3);
+      const pit = n3((u * 512) % 256, (v * 512) % 256);
+      // 어두운 갈회색 ↔ 녹 갈색, 판마다 명도가 다르다
+      const a = [0.3, 0.27, 0.25], b = [0.38, 0.24, 0.17];
+      const base = 0.82 + t1 * 0.3;
+      const c = [mix(a[0], b[0], rust), mix(a[1], b[1], rust), mix(a[2], b[2], rust)].map((q) => q * base * (0.92 + pit * 0.16));
+      const seam = Math.min(Math.min(mx, PW - mx), Math.min(my, PH - my));
+      const dark = seam < 1.6 ? 0.45 : 1;
+      const shade = (0.45 + lit * 0.95) * dark * (0.95 + t2 * 0.1);
+      const i = (y * SIZE + x) * 4;
+      img.d[i] = c[0] * shade * 1.15;
+      img.d[i + 1] = c[1] * shade * 1.15;
+      img.d[i + 2] = c[2] * shade * 1.15;
+      img.d[i + 3] = 1;
+    }
+  }
+  img.save("cheoryeop");
 }

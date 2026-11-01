@@ -71,21 +71,24 @@ const PRESETS = {
     zenith: srgb(0x2f6fc4), mid: srgb(0x6fa8e0), horizon: srgb(0xd6e4ee),
     glow: srgb(0xfff4e0), glowPow: 180, glowAmt: 0.35, wide: 0.1,
     antiBand: 0, sunCol: [3.2, 3.05, 2.8], ambient: srgb(0x8fb0d8), ambientAmt: 1.05,
-    coverage: 0.55, sharp: 0.17, cirrus: 0.28, cirrusCol: [1.5, 1.5, 1.5], haze: srgb(0xe6edf2),
+    coverage: 0.52, sharp: 0.17, cirrus: 0.28, cirrusCol: [1.5, 1.5, 1.5], haze: srgb(0xe6edf2),
+    mountain: { low: srgb(0xa9bccb), high: srgb(0x5f7a8c), tower: srgb(0xc8cdd2) },
   },
   sunset: {
     sun: norm([-0.9647, 0.1014, 0.243]),
-    zenith: srgb(0x1e2f62), mid: srgb(0x7a668f), horizon: srgb(0xf7a35c),
+    zenith: srgb(0x2f5588), mid: srgb(0xb08fa8), horizon: srgb(0xffb56c),
     glow: srgb(0xffb45a), glowPow: 7, glowAmt: 1.1, wide: 0.55,
-    antiBand: 0.55, sunCol: [4.2, 1.9, 0.8], ambient: srgb(0x5a4a78), ambientAmt: 0.5,
-    coverage: 0.56, sharp: 0.17, cirrus: 0.55, cirrusCol: [2.1, 1.0, 0.7], haze: srgb(0xf0a878),
+    antiBand: 0.55, sunCol: [4.4, 2.1, 1.05], ambient: srgb(0x8a6e96), ambientAmt: 0.85,
+    coverage: 0.53, sharp: 0.17, cirrus: 0.6, cirrusCol: [2.1, 1.0, 0.7], haze: srgb(0xf0a878),
+    mountain: { low: srgb(0xc98a7a), high: srgb(0x4d3a58), tower: srgb(0x3a2c44) },
   },
   night: {
     sun: norm([0.3, 0.75, 0.55]), // 달빛 쪽
     zenith: srgb(0x060a1c), mid: srgb(0x101838), horizon: srgb(0x2a2a48),
     glow: srgb(0x8a95c0), glowPow: 40, glowAmt: 0.04, wide: 0,
     antiBand: 0, sunCol: [0.1, 0.12, 0.18], ambient: srgb(0x161b30), ambientAmt: 0.45,
-    coverage: 0.49, sharp: 0.17, cirrus: 0.08, cirrusCol: [0.12, 0.13, 0.2], haze: srgb(0x2e2c44),
+    coverage: 0.47, sharp: 0.17, cirrus: 0.08, cirrusCol: [0.12, 0.13, 0.2], haze: srgb(0x2e2c44),
+    mountain: { low: srgb(0x2a2638), high: srgb(0x0b0d18), tower: srgb(0x0b0d18) },
     cityGlow: srgb(0xb0703c),
   },
 };
@@ -105,13 +108,13 @@ const STEPS = 26, LIGHT_STEPS = 4;
 
 function density(p, P) {
   const warp = noise(p[0] * 0.3 + 5, p[1], p[2] * 0.3 + 9) * 1.6;
-  const f = fbm(p[0] * 1.1 + warp, p[1] * 1.6, p[2] * 1.1 - warp, 4);
+  const f = fbm(p[0] * 1.9 + warp, p[1] * 2.2, p[2] * 1.9 - warp, 4);
   const h = clamp((p[1] - CLOUD_BOTTOM) / (CLOUD_TOP - CLOUD_BOTTOM));
   const shape = smooth(0, 0.12, h) * smooth(1, 0.35, h); // 아랫면은 평평하고 위로 뭉게뭉게 줄어든다
   const big = f * shape - (1 - P.coverage);
   if (big <= 0) return 0;
   // 가장자리를 작은 뭉게 무늬로 깎는다 (능선 잡음)
-  const n = fbm(p[0] * 6.5, p[1] * 6.5, p[2] * 6.5, 4);
+  const n = fbm(p[0] * 10, p[1] * 10, p[2] * 10, 4);
   const billow = 1 - Math.abs(2 * n - 1);
   return clamp((big - (1 - billow) * P.sharp) * 11);
 }
@@ -153,6 +156,69 @@ function cirrus(d, P) {
   const warp = fbm(x * 0.35, 5.3, z * 0.35, 3);
   const f = fbm(x * 0.5 + warp * 2.2, 11.1, z * 1.6 + warp * 1.4, 5);
   return smooth(0.5, 0.8, f) * smooth(0.03, 0.2, d[1]) * P.cirrus;
+}
+
+// 지평선 산줄기: 문루에서 본 실제 방위. 방위각(북 0, 시계 방향)·올려본 각은 지도 좌표로 계산한 근사 (도 단위).
+//   남산 방위 131°, 1.5 km, 정상 8°, N서울타워 끝 16.7° / 인왕산 328°, 2.9 km, 6° / 북악산 8°, 3.8 km, 4.7° / 관악산 195°, 11 km, 3°
+const PEAKS = [
+  { az: 131, h: 8, w: 16 }, // 남산
+  { az: 328, h: 6, w: 17 }, // 인왕산
+  { az: 8, h: 4.7, w: 16 }, // 북악산
+  { az: 340, h: 3.4, w: 26 }, // 북악~인왕 사이 능선
+  { az: 195, h: 3, w: 26 }, // 관악산
+  { az: 90, h: 2.2, w: 22 }, // 동쪽 먼 능선
+  { az: 265, h: 1.6, w: 28 }, // 서쪽 먼 능선
+];
+const TOWER_AZ = 131;
+function ridge(az) {
+  let h = 0.5;
+  for (const p of PEAKS) {
+    const da = ((az - p.az + 540) % 360) - 180;
+    h = Math.max(h, p.h * Math.exp(-((da / p.w) ** 2)));
+  }
+  // 울퉁불퉁한 능선 (0/360에서 이어지게 원 위에서 잡음)
+  const a = (az * Math.PI) / 180;
+  const n = fbm(Math.cos(a) * 9 + 31, Math.sin(a) * 9 + 17, 2.5, 5);
+  return h * (0.82 + n * 0.36) + (n - 0.5) * 0.5;
+}
+function mountains(col, d, P) {
+  const elev = (Math.asin(clamp(d[1], -1, 1)) * 180) / Math.PI;
+  if (elev < -0.5 || elev > 18) return col;
+  const az = (((Math.atan2(d[0], -d[2]) * 180) / Math.PI) + 360) % 360;
+  const H = ridge(az);
+  const M = P.mountain;
+  const px = 90 / SIZE; // 면 한 픽셀 각도: 경계를 부드럽게
+  const cover = smooth(H + px, H - px, elev);
+  let out = col;
+  if (cover > 0) {
+    // 산 위쪽은 짙고 아래는 지평선 빛에 묻힌다. 나무 무늬 잡음
+    const tex = fbm(az * 0.5, elev * 0.9, 3.3, 4);
+    const fade = smooth(0, Math.max(H, 1) * 0.9, elev);
+    const k = 0.82 + tex * 0.36;
+    const c = mix3(M.low, M.high, fade).map((v) => v * k);
+    if (P.cityGlow) {
+      // 밤: 산 아래쪽 동네 불빛
+      const dots = noise(az * 9, elev * 14, 1.5);
+      if (dots > 0.78 && elev < H * 0.6) {
+        const s = (dots - 0.78) * 2.2;
+        c[0] += s * 1.0, c[1] += s * 0.72, c[2] += s * 0.4;
+      }
+    }
+    out = mix3(col, c, cover);
+  }
+  // N서울타워: 남산 정상의 기둥, 전망대 원반, 안테나
+  const da = ((az - TOWER_AZ + 540) % 360) - 180;
+  const top = ridge(TOWER_AZ) - 0.3;
+  let tw = 0;
+  if (elev > top && elev < 12.3 && Math.abs(da) < 0.16) tw = 1;
+  if (elev >= 11.6 && elev < 12.7 && Math.abs(da) < 0.5) tw = 1;
+  if (elev >= 12.7 && elev < 16.7 && Math.abs(da) < 0.05 + 0.05 * (16.7 - elev) / 4) tw = 1;
+  if (tw) {
+    out = M.tower;
+    if (P.cityGlow && elev >= 11.6 && elev < 12.7) out = [2.4, 1.9, 1.5];
+    if (P.cityGlow && elev < 11.6) out = [0.5, 0.42, 0.45];
+  }
+  return out;
 }
 
 function shade(d, P) {
@@ -215,7 +281,7 @@ function shade(d, P) {
     const h = skyColor([d[0], 0, d[2]], P);
     col = mix3(h, [h[0] * 0.25, h[1] * 0.25, h[2] * 0.25], k);
   }
-  return col;
+  return mountains(col, d, P);
 }
 
 // 필름 톤매핑 → sRGB

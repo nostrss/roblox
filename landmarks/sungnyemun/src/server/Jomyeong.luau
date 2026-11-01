@@ -30,10 +30,10 @@ local LAMP = Color3.fromRGB(230, 176, 112) -- Neon 등알이 Bloom에 하얗게 
 local front, back = D.wall.south, D.wall.north
 local LIFT = 0.9 -- 기구를 바닥에서 띄우는 높이. 복셀 조명(Technology Voxel)은 바닥 판에 묻힌 광원을 가려 버린다 (Studio에서 확인)
 local SPOTS = {
-	{ Vector3.new(-6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(-7, 5, front), 8, true },
-	{ Vector3.new(6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(7, 5, front), 8, true },
-	{ Vector3.new(-6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(-7, 5, back), 8, true },
-	{ Vector3.new(6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(7, 5, back), 8, true },
+	{ Vector3.new(-6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(-7, 5, front), 5, true },
+	{ Vector3.new(6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(7, 5, front), 5, true },
+	{ Vector3.new(-6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(-7, 5, back), 5, true },
+	{ Vector3.new(6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(7, 5, back), 5, true },
 	{ Vector3.new(-7, y(0) + LIFT, front - 0.9), Vector3.new(-7, y(L.lowerEave), front + 1), 2, false },
 	{ Vector3.new(7, y(0) + LIFT, front - 0.9), Vector3.new(7, y(L.lowerEave), front + 1), 2, false },
 }
@@ -174,8 +174,8 @@ return function()
 		globe.Material = Enum.Material.Neon
 		local light = Instance.new("PointLight")
 		light.Color = LAMP
-		light.Brightness = 1.5
-		light.Range = 40
+		light.Brightness = 2
+		light.Range = 56
 		light.Parent = globe
 		CollectionService:AddTag(globe, Tags.NIGHT_LIGHT)
 	end

@@ -139,6 +139,7 @@ local function floorStrip(name: string, x0: number, x1: number, z0: number, z1: 
 		t.StudsPerTileV = tile * S
 		t.OffsetStudsU = (x0 % tile) * S
 		t.OffsetStudsV = (z0 % tile) * S
+		t.Color3 = Color3.new(0.68, 0.68, 0.68) -- 노을·낮 해에 하얗게 날리지 않게 낮춘다
 		t.Parent = p
 	elseif name == "Jandi" and x1 - x0 > 0.5 then
 		-- 잔디: 지형 풀(바람에 흔들리는 풀 장식)을 판 위에 얇게 덮는다. 판은 그대로 두어 부딪힘·구멍을 막는다

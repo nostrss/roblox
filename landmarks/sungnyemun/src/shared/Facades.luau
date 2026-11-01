@@ -8,13 +8,13 @@ return {
 	tileU = 24, -- 8칸 × 3 m
 	tileV = 28, -- 8층 × 3.5 m
 	styles = {
-		glass = { day = 84131604983118, lit = 132722183359061, base = rgb(44, 66, 86), reflect = 0.32 },
-		darkglass = { day = 73440169642902, lit = 99011467585580, base = rgb(20, 26, 32), reflect = 0.4 },
-		stone = { day = 79604342931756, lit = 120980588036925, base = rgb(44, 54, 62), reflect = 0.14 },
-		tile = { day = 130807725997292, lit = 71370884814203, base = rgb(40, 48, 54), reflect = 0.12 },
-		concrete = { day = 92044194021232, lit = 121440818958757, base = rgb(40, 46, 50), reflect = 0.08 },
-		market = { day = 79563553241847, lit = 105239493453043, base = rgb(40, 46, 50), reflect = 0.06 },
+		glass = { day = 106019247986807, lit = 90899959987465, base = rgb(44, 66, 86), reflect = 0.32 },
+		darkglass = { day = 73966642810741, lit = 84614488072843, base = rgb(20, 26, 32), reflect = 0.4 },
+		stone = { day = 81434705405161, lit = 121985779299592, base = rgb(44, 54, 62), reflect = 0.14 },
+		tile = { day = 86766677415843, lit = 71024089853047, base = rgb(40, 48, 54), reflect = 0.12 },
+		concrete = { day = 78509542081759, lit = 131252261462159, base = rgb(40, 46, 50), reflect = 0.08 },
+		market = { day = 113898169202189, lit = 140007288578830, base = rgb(40, 46, 50), reflect = 0.06 },
 	},
-	shop = { day = 134935675128843, lit = 74727772185661, base = rgb(50, 58, 64), reflect = 0.12, tileU = 24, height = 4.5 },
-	bakseok = { texture = 133918019266406, tile = 4 }, -- 박석 바닥: 4 m × 4 m 타일 (server Plaza)
+	shop = { day = 137253024688145, lit = 105028269288517, base = rgb(50, 58, 64), reflect = 0.12, tileU = 24, height = 4.5 },
+	bakseok = { texture = 129104232474739, tile = 4 }, -- 박석 바닥: 4 m × 4 m 타일 (server Plaza)
 }

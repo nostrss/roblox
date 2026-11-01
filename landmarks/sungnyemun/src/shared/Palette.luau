@@ -12,6 +12,7 @@ local PAINTED = Enum.Material.Plastic
 local paint: { [string]: Paint } = {
 	noerok = { material = PAINTED, color = Color3.fromHex("#34645A") }, -- 뇌록: 목부 일반 가칠 (S7 p.460, 표 4-26 p.421)
 	seokganju = { material = PAINTED, color = Color3.fromHex("#7A2C20") }, -- 석간주: 기둥·판벽 (S7 p.421·456, S11 ≈ #80291D)
+	seongmun = { material = Enum.Material.WoodPlanks, color = Color3.fromHex("#4E2519") }, -- 성문 안쪽 면: 석간주에 들기름칠 한 널. 통로 조명에 밝게 뜨지 않게 어둡게 (근사)
 	yeonbaek = { material = PAINTED, color = Color3.fromHex("#E6E1D3") }, -- 연백: 연목개판 백색 가칠 (S7 p.451)
 	meok = { material = PAINTED, color = Color3.fromHex("#1C1B1D") }, -- 먹: 홍예천장 바탕 (S7 p.455 "검정색 바탕에 오색운문"). 도판 #0D0C0E(p.438 첨차 마구리)를 조금 밝힘 — 근사
 	giwa = { material = Enum.Material.Slate, color = Color3.fromRGB(72, 74, 78) }, -- 기와 회흑
@@ -76,7 +77,7 @@ local byName: { [string]: string } = {
 	YukchukBody = "seokchuk", Stone = "myeonseok", Hongyeseok = "myeonseok", Nujo = "myeonseok",
 	Dideumdol = "myeonseok", Somaetdol = "myeonseok", Panseok = "panseok",
 	YeojangJeon = "jeondol", Okgaejeon = "giwa", -- 여장 전돌·옥개전 (S7 p.198 옥개전은 기와처럼 구운 것)
-	Seongmun = "seokganju", Dunte = "seokganju", Cheoryeop = "soe", Banjaneol = "meok",
+	Seongmun = "seongmun", Dunte = "seongmun", Cheoryeop = "soe", Banjaneol = "meok",
 	PavilionBase = "gidan", Pyoseok = "gidan", -- 지붕 분해 표식 돌
 	Jeonsidae = "seokganju", -- 공포 모형 전시대 (근사: 자료 없음, 문루 안 계단·난간과 같은 석간주)
 	SeongBody = "seongdol", SeongBack = "jandi", Yeojang = "yeojangseok", Miseok = "yeojangseok", Okgae = "okgaeseok",

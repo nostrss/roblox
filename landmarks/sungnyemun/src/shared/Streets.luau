@@ -22,19 +22,14 @@ local function world(points: { Vector3 }): { Vector3 }
 end
 
 -- 차 종류. 앞 = −Z, 바닥 = 0. 크기: 시내버스 약 11 × 2.5 × 3.2 m, 승용차·택시 약 4.7 × 1.85 × 1.5 m
-local DARK = Color3.fromRGB(28, 28, 30) -- 바퀴 자리·차 밑
-local GLASS = Color3.fromRGB(40, 48, 56) -- 유리
+-- 메시는 Studio AI 메시 생성으로 만들었다 (S46). 특정 차종이 아니다. 메시를 못 받으면 상자로 보인다
 local ENGINE = 9112735838 -- S20
+local YAW = 180 -- 생성 메시 앞을 차 앞(−Z)으로 돌리는 각 (Play에서 눈으로 맞췄다)
 
-local function bus(colors: { Color3 }): Traffic.Kind
+local function bus(meshId: number, texture: number, color: Color3): Traffic.Kind
 	return {
-		boxes = {
-			{ size = Vector3.new(2.5, 2.85, 11), at = Vector3.new(0, 0.35 + 2.85 / 2, 0) },
-			{ size = Vector3.new(2.3, 0.4, 10.2), at = Vector3.new(0, 0.2, 0), color = DARK },
-			{ size = Vector3.new(2.54, 1.1, 9.4), at = Vector3.new(0, 2.15, 0.4), color = GLASS }, -- 옆 창 띠
-			{ size = Vector3.new(2.3, 1.3, 0.04), at = Vector3.new(0, 2.05, -5.5), color = GLASS }, -- 앞 유리
-		},
-		colors = colors,
+		boxes = { { size = Vector3.new(2.5, 3.2, 11), at = Vector3.new(0, 1.6, 0), mesh = meshId, texture = texture, yaw = YAW } },
+		colors = { color },
 		lamp = Vector3.new(0.9, 0.75, 5.52),
 		shadow = true,
 		spot = true,
@@ -42,37 +37,23 @@ local function bus(colors: { Color3 }): Traffic.Kind
 	}
 end
 
-local function car(colors: { Color3 }, sign: boolean?): Traffic.Kind
-	local boxes: { Traffic.Box } = {
-		{ size = Vector3.new(1.85, 0.75, 4.7), at = Vector3.new(0, 0.2 + 0.75 / 2, 0) },
-		{ size = Vector3.new(1.7, 0.25, 4.0), at = Vector3.new(0, 0.125, 0), color = DARK },
-		{ size = Vector3.new(1.65, 0.55, 2.5), at = Vector3.new(0, 0.95 + 0.55 / 2, 0.25), color = GLASS }, -- 지붕까지 유리 덩어리
-	}
-	if sign then
-		table.insert(boxes, { size = Vector3.new(0.6, 0.22, 0.25), at = Vector3.new(0, 1.5 + 0.11, 0.25), color = Color3.fromRGB(235, 235, 225) }) -- 택시 표시등
-	end
+local function car(meshId: number, texture: number, color: Color3, height: number): Traffic.Kind
 	return {
-		boxes = boxes,
-		colors = colors,
+		boxes = { { size = Vector3.new(1.85, height, 4.7), at = Vector3.new(0, height / 2, 0), mesh = meshId, texture = texture, yaw = YAW } },
+		colors = { color },
 		lamp = Vector3.new(0.65, 0.7, 2.36),
 		engine = { id = ENGINE, volume = 0.45, speed = 1 },
 	}
 end
 
--- 색: 서울 시내버스 간선 파랑·지선 초록·광역 빨강, 택시 꽃담황토 주황. 근사: 색값은 눈대중
-local blueBus = bus({ Color3.fromRGB(40, 90, 190) })
-local greenBus = bus({ Color3.fromRGB(70, 160, 60) })
-local redBus = bus({ Color3.fromRGB(200, 40, 40) })
-local taxi = car({ Color3.fromRGB(225, 130, 50) }, true)
-local sedan = car({
-	Color3.fromRGB(235, 235, 235), -- 흰색
-	Color3.fromRGB(20, 20, 22), -- 검정
-	Color3.fromRGB(160, 162, 166), -- 은색
-	Color3.fromRGB(80, 82, 88), -- 진회색
-	Color3.fromRGB(30, 45, 80), -- 남색
-})
+-- 색: 서울 시내버스 간선 파랑·지선 초록, 택시 꽃담황토 주황
+local blueBus = bus(98189549187324, 131511123801289, Color3.fromRGB(40, 90, 190))
+local greenBus = bus(91404385864241, 128231080467625, Color3.fromRGB(70, 160, 60))
+local taxi = car(115031979282474, 125122848979477, Color3.fromRGB(225, 130, 50), 1.6)
+local whiteCar = car(116477144088305, 116902220895007, Color3.fromRGB(235, 235, 235), 1.45)
+local blackCar = car(126977215622932, 99878769423911, Color3.fromRGB(20, 20, 22), 1.5)
 
-local cars = { sedan, sedan, sedan, sedan, taxi, taxi }
+local cars = { whiteCar, whiteCar, blackCar, blackCar, taxi, taxi }
 
 -- 차로 하나: Shared.Lanes의 차로 가운데선을 세계 좌표로
 local function lane(road: Lanes.Road, name: string, speed: number, gap: { number }, kinds: { Traffic.Kind }): Traffic.Lane
@@ -80,8 +61,8 @@ local function lane(road: Lanes.Road, name: string, speed: number, gap: { number
 	return { path = world(Lanes.line(road, l.t, l.dir)), speed = speed, gap = gap, kinds = kinds }
 end
 
-local buses = { blueBus, blueBus, redBus }
-local sowolKinds = { sedan, sedan, sedan, taxi, greenBus }
+local buses = { blueBus }
+local sowolKinds = { whiteCar, blackCar, blackCar, taxi, greenBus }
 local config: Traffic.Config = {
 	max = 14,
 	lanes = {

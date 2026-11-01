@@ -61,7 +61,7 @@ end
 -- 길 조명: 무릎 높이 기둥
 local function bollard(x: number, z: number, g: number, light: boolean)
 	part("Cheol", Vector3.new(0.12, 0.8, 0.12), at(x, g + 0.4, z))
-	lampHead(0.18, at(x, g + 0.86, z), if light then { brightness = 1.3, range = 26 } else nil)
+	lampHead(0.18, at(x, g + 0.86, z), if light then { brightness = 1.6, range = 40 } else nil)
 end
 
 -- 가로등: 기둥과 길 쪽으로 뻗은 팔. dir = 건물 축 수평 단위 벡터

@@ -21,21 +21,12 @@ local site = require(script.Parent.Site)
 
 local hex = Color3.fromHex
 local CYL = Enum.PartType.Cylinder
-local BALL = Enum.PartType.Ball
 local UPRIGHT = CFrame.Angles(0, 0, math.pi / 2) -- Part 원기둥 축(X)을 세운다
 local METAL = Enum.Material.SmoothPlastic
 
 -- 복식 색 (기획 "디자인 시안". 사진 표본 + 눈대중 근사)
 local C = {
-	skin = hex("#D9B08C"), -- 근사: 표본 없음
-	white = hex("#E8E4DA"),
 	black = hex("#14151C"),
-	red = hex("#DB1F3E"),
-	hatBand = hex("#E8B92F"),
-	hatTop = hex("#C9A227"),
-	plume = hex("#C8142E"),
-	beads = hex("#B5622A"),
-	brimIn = hex("#334693"),
 }
 
 type Joint = Figures.Joint
@@ -46,110 +37,118 @@ local function rod(joint: Joint, length: number, width: number, x: number, y: nu
 	return { joint = joint, size = Vector3.new(length, width, width), at = CFrame.new(x, y, z) * UPRIGHT, color = color, shape = CYL, material = METAL }
 end
 
--- 머리 위: 전립 (호군·파수군)
-local function jeollip(b: { Figures.Box })
-	table.insert(b, rod("upper", 0.03, 0.44, 0, 1.70, 0, C.black)) -- 챙
-	table.insert(b, rod("upper", 0.012, 0.4, 0, 1.68, 0, C.brimIn)) -- 챙 안
-	table.insert(b, rod("upper", 0.05, 0.27, 0, 1.74, 0, C.hatBand)) -- 둘레 띠
-	table.insert(b, rod("upper", 0.13, 0.25, 0, 1.82, 0, C.black)) -- 몸
-	table.insert(b, { joint = "upper", size = Vector3.new(0.06, 0.06, 0.06), at = CFrame.new(0, 1.91, 0), color = C.hatTop, shape = BALL, material = METAL }) -- 꼭대기
-	table.insert(b, box("upper", 0.05, 0.3, 0.05, 0.16, 1.68, -0.02, C.plume)) -- 상모
-	table.insert(b, box("upper", 0.2, 0.2, 0.02, 0, 1.32, 0.135, C.beads)) -- 패영
+-- 복식 메시: Studio AI 메시 생성으로 만들었다 (S46). 사진 픽셀은 없고, 프롬프트에 사진에서 읽은 색과 형태만 적었다. 사람 얼굴은 가상이다.
+-- { mesh, texture, yaw } yaw = 메시 앞이 인물 앞(+Z)을 보게 돌리는 각. 생성 메시는 앞이 −Z다 (Play 확인)
+local M = {
+	head = { 73698535879637, 101211243302770, 180 },
+	jeollip = { 126342459365549, 116313543625603, 180 },
+	samo = { 111329661539451, 138499598635680, 180 },
+	hwangnip = { 113461766938981, 113968085371673, 180 },
+	tallHat = { 95826553741572, 95695938878583, 180 },
+	vestYellow = { 96192919519974, 121443490045288, 180 },
+	vestRed = { 96087331470781, 95097345748557, 180 },
+	robeHogun = { 98887586067697, 104207938350278, 180 },
+	robePlayer = { 96476874038065, 105491455510964, 180 },
+	robeSeonjeon = { 128169318337497, 120343294687032, 180 },
+	robeGeumru = { 116640893349499, 72122075937487, 180 },
+	armPurple = { 124968232742241, 125575726064405, 180 },
+	armBlue = { 126225144238762, 108633295925143, 180 },
+	armTeal = { 79972167450184, 76580250875662, 180 },
+	armYellow = { 135660737297744, 105776217702940, 180 },
+	skirt = { 84995893448823, 119103880034870, 180 },
+	boot = { 94620698467497, 81450217428794, 180 },
+	woldo = { 119464657900617, 118060206453782, 180 },
+}
+-- 메시를 받지 못했을 때 상자로 지을 때의 색
+local FALLBACK = hex("#6E6A72")
+
+-- 메시 한 조각: 크기 (m), 가운데 자리 (m)
+local function mesh(joint: Joint, m: { number }, w: number, h: number, d: number, x: number, y: number, z: number, shadow: boolean?): Figures.Box
+	return {
+		joint = joint, size = Vector3.new(w, h, d), at = CFrame.new(x, y, z) * CFrame.Angles(0, math.rad(m[3]), 0),
+		color = FALLBACK, shadow = shadow, mesh = m[1], texture = m[2],
+	}
 end
 
 export type Dress = {
-	coat: Color3, -- 몸통과 앞자락
-	sleeve: Color3,
-	skirt: Color3?, -- 앞자락 아래 치마
-	coatLength: number, -- 허리 아래 앞자락 길이
-	belt: Color3,
-	drop: Color3?, -- 앞 드림
-	hat: ({ Figures.Box }) -> (),
+	torso: { number },
+	arm: { number },
+	hat: Figures.Box,
+	skirt: boolean?, -- 앞자락 아래 치마
+	torsoHeight: number, -- 어깨(y 1.42)에서 앞자락 끝까지 (m)
+	torsoDepth: number,
 }
 
--- 몸 한 벌: 약 5스터드 = 1.7 m (머리 꼭대기), 모자 포함 1.9 m
+-- 몸 한 벌: 약 5스터드 = 1.7 m (머리 꼭대기). 조각마다 core Figures의 관절 하나를 따라 움직인다
 local function body(d: Dress): { Figures.Box }
 	local b: { Figures.Box } = {
-		box("legL", 0.17, 0.5, 0.2, 0.1, 0.57, 0, d.skirt or d.coat),
-		box("legR", 0.17, 0.5, 0.2, -0.1, 0.57, 0, d.skirt or d.coat),
-		box("legL", 0.18, 0.36, 0.26, 0.1, 0.18, 0.02, C.black), -- 목화
-		box("legR", 0.18, 0.36, 0.26, -0.1, 0.18, 0.02, C.black),
-		box("upper", 0.46, 0.6, 0.26, 0, 1.11, 0, d.coat, true),
-		box("root", 0.5, d.coatLength, 0.33, 0, 0.84 - d.coatLength / 2, 0, d.coat, true),
-		box("upper", 0.48, 0.1, 0.28, 0, 0.9, 0, d.belt),
-		box("armL", 0.15, 0.52, 0.18, 0.3, 1.1, 0, d.sleeve),
-		box("armR", 0.15, 0.52, 0.18, -0.3, 1.1, 0, d.sleeve),
-		box("armL", 0.12, 0.14, 0.13, 0.3, 0.78, 0, C.white), -- 흰 토시·장갑 (pasu-notes §13.1)
-		box("armR", 0.12, 0.14, 0.13, -0.3, 0.78, 0, C.white),
-		box("upper", 0.18, 0.06, 0.16, 0, 1.43, 0, C.white), -- 깃
-		{ joint = "upper", size = Vector3.new(0.24, 0.25, 0.24), at = CFrame.new(0, 1.57, 0), color = C.skin, material = METAL },
-		box("upper", 0.15, 0.025, 0.01, 0, 1.6, 0.122, C.black), -- 눈 자리 (앞뒤가 구분되게 한 줄로)
+		mesh("legL", M.boot, 0.17, 0.46, 0.3, 0.1, 0.23, 0.02),
+		mesh("legR", M.boot, 0.17, 0.46, 0.3, -0.1, 0.23, 0.02),
+		mesh("upper", d.torso, 0.56, d.torsoHeight, d.torsoDepth, 0, 1.42 - d.torsoHeight / 2, 0, true),
+		mesh("armL", d.arm, 0.19, 0.68, 0.19, 0.255, 1.05, 0),
+		mesh("armR", d.arm, 0.19, 0.68, 0.19, -0.255, 1.05, 0),
+		mesh("upper", M.head, 0.235, 0.345, 0.22, 0, 1.54, 0.01),
+		d.hat,
 	}
 	if d.skirt then
-		table.insert(b, box("root", 0.46, 0.45, 0.27, 0, 0.5, 0, d.skirt))
+		table.insert(b, mesh("root", M.skirt, 0.44, 0.64, 0.38, 0, 0.53, 0))
 	end
-	if d.drop then
-		table.insert(b, box("root", 0.11, 0.62, 0.02, 0, 0.56, 0.175, d.drop))
-	end
-	d.hat(b)
 	return b
 end
 
+local JEOLLIP = mesh("upper", M.jeollip, 0.56, 0.25, 0.56, 0, 1.78, 0)
+-- 전립의 상모와 패영 (sa03): 메시에 없는 부분을 얹는다
+local function jeollipTrim(b: { Figures.Box })
+	local red, amber = hex("#C8142E"), hex("#B5622A")
+	local function ball(d: number, x: number, y: number, z: number, color: Color3): Figures.Box
+		return { joint = "upper", size = Vector3.new(d, d, d), at = CFrame.new(x, y, z), color = color, shape = Enum.PartType.Ball, material = METAL }
+	end
+	table.insert(b, rod("upper", 0.26, 0.05, 0.2, 1.52, -0.05, red)) -- 상모 술
+	table.insert(b, ball(0.06, 0.2, 1.66, -0.05, red))
+	for side = -1, 1, 2 do
+		for i = 0, 5 do
+			local k = i / 5
+			table.insert(b, ball(0.028, side * (0.14 - 0.08 * k), 1.6 - 0.32 * k, 0.04 + 0.1 * k, amber))
+		end
+	end
+end
 local function hogun(): { Figures.Box } -- 호군 (sa02)
-	local b = body({ coat = hex("#3745A5"), sleeve = hex("#5B4FA8"), coatLength = 0.7, belt = C.red, drop = C.red, hat = jeollip })
-	table.insert(b, box("root", 0.1, 0.5, 0.02, 0.15, 0.56, 0.175, hex("#C9B21E"))) -- 황 수건
-	table.insert(b, box("root", 0.04, 0.5, 0.02, -0.17, 0.56, 0.175, hex("#CDA861"))) -- 황 끈
+	local b = body({ torso = M.robeHogun, arm = M.armPurple, hat = JEOLLIP, torsoHeight = 1.22, torsoDepth = 0.4 })
+	jeollipTrim(b)
 	table.insert(b, { joint = "armR", size = Vector3.new(0.75, 0.03, 0.03), at = CFrame.new(-0.3, 0.74, 0.28) * CFrame.Angles(0, math.pi / 2, 0.15), color = hex("#C4122C"), shape = CYL, material = METAL }) -- 등채
 	table.insert(b, { joint = "root", size = Vector3.new(0.85, 0.06, 0.05), at = CFrame.new(0.3, 0.72, -0.05) * CFrame.Angles(0, math.pi / 2, 0.9), color = C.black, shape = CYL, material = METAL }) -- 환도
 	return b
 end
 
-local SOLDIER = { coatLength = 0.4, belt = C.red, drop = C.red, hat = jeollip }
-local function jeongbyeong(coat: Color3, skirt: Color3, sleeve: Color3, spear: boolean): { Figures.Box } -- 파수군 (sa03 1안 보라 소매 / 홍 전복 sg05·sp04)
-	local b = body({ coat = coat, sleeve = sleeve, skirt = skirt, coatLength = SOLDIER.coatLength, belt = SOLDIER.belt, drop = SOLDIER.drop, hat = SOLDIER.hat })
+local function jeongbyeong(torso: { number }, spear: boolean): { Figures.Box } -- 파수군 (sa03 / 홍 전복 sg05·sp04)
+	local b = body({ torso = torso, arm = M.armPurple, hat = JEOLLIP, skirt = true, torsoHeight = 1.0, torsoDepth = 0.34 })
+	jeollipTrim(b)
 	if spear then
-		table.insert(b, rod("armR", 2.4, 0.04, -0.33, 1.2, 0.07, hex("#7A3A22")))
-		table.insert(b, box("armR", 0.07, 0.24, 0.02, -0.33, 2.5, 0.07, hex("#C9A227")))
+		table.insert(b, mesh("armR", M.woldo, 0.2, 2.5, 0.1, -0.34, 1.25, 0.1)) -- 긴 자루 칼 (sa03·sg05)
 	end
 	return b
 end
-local YELLOW, RED_COAT = hex("#E3BE3C"), hex("#CA1344")
-local PURPLE, SKIRT = hex("#594C78"), hex("#5D5A85")
 
-local function tallHat(b: { Figures.Box }) -- 높은 흑 모자
-	table.insert(b, rod("upper", 0.03, 0.34, 0, 1.70, 0, C.black))
-	table.insert(b, rod("upper", 0.24, 0.24, 0, 1.82, 0, C.black))
-end
 local function geumrugwan(): { Figures.Box } -- 금루관 후보 (sp03·sp07, 역할 추정)
-	local b = body({ coat = hex("#157A6B"), sleeve = hex("#157A6B"), coatLength = 0.7, belt = hex("#B08A3A"), hat = tallHat })
+	local b = body({ torso = M.robeGeumru, arm = M.armTeal, hat = mesh("upper", M.tallHat, 0.3, 0.33, 0.3, 0, 1.84, 0), torsoHeight = 1.22, torsoDepth = 0.4 })
 	table.insert(b, { joint = "armL", size = Vector3.new(0.03, 0.36, 0.36), at = CFrame.new(0.3, 0.72, 0.16) * CFrame.Angles(0, 0, math.pi / 2), color = hex("#8C7A3C"), shape = CYL, material = METAL }) -- 징
 	table.insert(b, rod("armR", 0.34, 0.03, -0.3, 0.68, 0.06, hex("#5A2E22"))) -- 징채
 	return b
 end
 
-local function samo(b: { Figures.Box }) -- 사모
-	table.insert(b, rod("upper", 0.14, 0.26, 0, 1.76, 0, C.black))
-	table.insert(b, box("upper", 0.14, 0.14, 0.02, 0.18, 1.78, -0.08, C.black))
-	table.insert(b, box("upper", 0.14, 0.14, 0.02, -0.18, 1.78, -0.08, C.black))
-end
 local function seonjeongwan(): { Figures.Box } -- 선전관 후보 (sp03, 역할 추정)
-	local b = body({ coat = hex("#1E44B8"), sleeve = hex("#1E44B8"), coatLength = 0.7, belt = hex("#B08A3A"), hat = samo })
-	table.insert(b, box("upper", 0.22, 0.22, 0.02, 0, 1.16, 0.135, hex("#D9C27A"))) -- 흉배
+	local b = body({ torso = M.robeSeonjeon, arm = M.armBlue, hat = mesh("upper", M.samo, 0.46, 0.18, 0.46, 0, 1.76, 0), torsoHeight = 1.25, torsoDepth = 0.3 })
 	table.insert(b, box("armR", 0.1, 0.16, 0.02, -0.28, 0.66, 0.09, hex("#5A2E22"))) -- 표신 (모양은 근사)
 	return b
 end
 local function geumgun(): { Figures.Box } -- 금군: 복식 어긋남은 머리 주석
-	local b = jeongbyeong(YELLOW, SKIRT, PURPLE, false)
+	local b = jeongbyeong(M.vestYellow, false)
 	table.insert(b, box("armR", 0.1, 0.16, 0.02, -0.28, 0.66, 0.09, hex("#5A2E22"))) -- 부험 (모양은 근사)
 	return b
 end
 
-local function hwangnip(b: { Figures.Box }) -- 황립
-	table.insert(b, rod("upper", 0.03, 0.46, 0, 1.70, 0, hex("#E6B422")))
-	table.insert(b, rod("upper", 0.13, 0.25, 0, 1.78, 0, hex("#E6B422")))
-end
 local function player(instrument: { Figures.Box }): { Figures.Box } -- 나각수·나발수 후보 (mh22 도열, 악기 배정 추정)
-	local b = body({ coat = hex("#E8BC2C"), sleeve = hex("#E8BC2C"), coatLength = 0.55, belt = hex("#1A3F9E"), hat = hwangnip })
+	local b = body({ torso = M.robePlayer, arm = M.armYellow, hat = mesh("upper", M.hwangnip, 0.52, 0.2, 0.52, 0, 1.76, 0), torsoHeight = 1.22, torsoDepth = 0.4 })
 	for _, i in instrument do
 		table.insert(b, i)
 	end
@@ -225,20 +224,21 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 		go(r, side * ARCH_X, NORTH_START, MARCH)
 	end
 
-	-- 문 곁 자리: 문짝 닫힘 k일 때. 처음에는 열린 문짝 끝 너머에 섰다가 문짝 뒤(북쪽)로 붙는다
+	-- 문 곁 자리: 문짝 닫힘 k일 때. 내내 남쪽(문 쪽)을 보고 두 손을 문짝 북쪽 면에 댄 채 걷는다.
+	-- 손이 닿는 자리는 처음에는 문짝 끝, 다 닫히면 경첩에서 HAND_END m. 몸은 그 자리에서 REACH m 북쪽이다
+	local REACH, HAND_END, WALL_CLEAR = 0.62, 1.35, 0.25
 	local function beside(sx: number, k: number): (number, number, number)
 		local a = math.rad(G.openAngle) * (1 - k)
-		local r = G.leafWidth + 0.35 + (1.18 - G.leafWidth - 0.35) * k
-		local off = 0.55 * k
-		local x = sx * G.leafWidth - sx * math.cos(a) * r + sx * math.sin(a) * off
-		local z = hingeZ - math.sin(a) * r - math.cos(a) * off
-		return x, z, math.atan2(-sx * math.sin(a), math.cos(a))
+		local r = G.leafWidth + (HAND_END - G.leafWidth) * k
+		local x = sx * G.leafWidth - sx * math.cos(a) * r - sx * WALL_CLEAR * (1 - k) -- 처음에는 통로 벽에서 떨어져 선다
+		local z = hingeZ - math.sin(a) * r - G.thickness - REACH
+		return x, z, SOUTH
 	end
-	-- 문 움직임(core Ceremony의 smoothstep)을 8칸으로 따라간다
+	-- 문 움직임(core Ceremony의 smoothstep)을 16칸으로 따라간다. 닫을 때는 앞으로 밀고, 열 때는 그대로 뒷걸음으로 당긴다
 	local function followDoor(r: Route, sx: number, t0: number, len: number, closing: boolean)
-		stay(r, t0, nil, select(3, beside(sx, if closing then 0 else 1)))
-		for i = 1, 8 do
-			local u = i / 8
+		stay(r, t0, nil, SOUTH)
+		for i = 1, 16 do
+			local u = i / 16
 			local k = u * u * (3 - 2 * u)
 			local x, z, face = beside(sx, if closing then k else 1 - k)
 			local last = r.keys[#r.keys]
@@ -367,18 +367,18 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 		{ boxes = geumrugwan(), keys = r4.keys, carry = { armL = true } },
 		{ boxes = player(nagak()), keys = r5.keys, carry = { armR = true } },
 		{ boxes = player(NABAL), keys = r6.keys, rest = "horn", carry = { armR = true } },
-		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, false), keys = r7.keys },
-		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, false), keys = r8.keys },
-		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, true), keys = r9.keys, duty = true, carry = { armR = true } },
-		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, true), keys = r10.keys, duty = true, carry = { armR = true } },
-		{ boxes = jeongbyeong(RED_COAT, SKIRT, PURPLE, true), keys = r11.keys, duty = true, rest = "carrybox", carry = { armL = true, armR = true } },
-		{ boxes = jeongbyeong(RED_COAT, SKIRT, PURPLE, true), keys = r12.keys, carry = { armR = true } },
+		{ boxes = jeongbyeong(M.vestYellow, false), keys = r7.keys },
+		{ boxes = jeongbyeong(M.vestYellow, false), keys = r8.keys },
+		{ boxes = jeongbyeong(M.vestYellow, true), keys = r9.keys, duty = true, carry = { armR = true } },
+		{ boxes = jeongbyeong(M.vestYellow, true), keys = r10.keys, duty = true, carry = { armR = true } },
+		{ boxes = jeongbyeong(M.vestRed, true), keys = r11.keys, duty = true, rest = "carrybox", carry = { armL = true, armR = true } },
+		{ boxes = jeongbyeong(M.vestRed, true), keys = r12.keys, carry = { armR = true } },
 	}
 	for _, f in figures do
 		assert(f.duty or f.keys[#f.keys].at <= T.exit + LEN.exit, "퇴장이 회차 안에 끝나지 않는다")
 	end
 	-- 약시함: 11번 왼손 (모양·색은 근사, 프레임의 짙은 적갈 상자)
-	table.insert(figures[11].boxes, box("armL", 0.3, 0.16, 0.2, 0.2, 0.74, 0.1, hex("#5A2E22")))
+	table.insert(figures[11].boxes, box("armL", 0.24, 0.12, 0.16, 0.2, 0.74, 0.1, hex("#5A2E22")))
 
 	-- 깃발: 남측면 앞 좌우 8기. 사람 키의 약 2배, 끝에 붉은 술. 색 조합은 사진에서 읽었고 문양은 근거가 없어 넣지 않는다. 배치는 제안값
 	local props: { Figures.Box } = {}

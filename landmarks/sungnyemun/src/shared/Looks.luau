@@ -15,7 +15,7 @@ end
 
 return {
 	day = {
-		Sky = sky(131040856752775, 91339032253636, 105286274660484, 122596059446236, 105329115457787, 98980534800019),
+		Sky = sky(127880672906473, 85145741487119, 90572582244649, 112905655674416, 135778438348043, 81248762751742),
 		Atmosphere = { Density = 0.14, Offset = 0.2, Color = rgb(205, 216, 228), Decay = rgb(120, 140, 170), Glare = 0.1, Haze = 0.6 },
 		ColorCorrectionEffect = { TintColor = rgb(255, 252, 246), Saturation = 0.06, Contrast = 0.06, Brightness = 0 },
 		BloomEffect = { Intensity = 0.35, Size = 24, Threshold = 2 },
@@ -23,7 +23,7 @@ return {
 		Lighting = { Brightness = 2.6, OutdoorAmbient = rgb(112, 118, 128), Ambient = rgb(70, 70, 72), ColorShift_Top = rgb(255, 244, 226), EnvironmentDiffuseScale = 1, EnvironmentSpecularScale = 1 },
 	},
 	sunset = {
-		Sky = sky(114896393031809, 71527512818271, 89180182483193, 101499414492525, 124433615626153, 74219837727272),
+		Sky = sky(89508213159277, 131069333135660, 98563339719199, 116274250898115, 80282693899109, 125175301438133),
 		Atmosphere = { Density = 0.16, Offset = 0.2, Color = rgb(255, 196, 150), Decay = rgb(170, 120, 130), Glare = 0.3, Haze = 0.5 },
 		ColorCorrectionEffect = { TintColor = rgb(255, 240, 226), Saturation = 0.02, Contrast = 0.04, Brightness = 0 },
 		BloomEffect = { Intensity = 0.7, Size = 32, Threshold = 1.6 },
@@ -31,11 +31,11 @@ return {
 		Lighting = { Brightness = 2.8, OutdoorAmbient = rgb(118, 100, 112), Ambient = rgb(70, 56, 60), ColorShift_Top = rgb(255, 176, 104), EnvironmentDiffuseScale = 1, EnvironmentSpecularScale = 1 },
 	},
 	night = {
-		Sky = sky(86784299708356, 122714494320281, 118226783766884, 140143608863262, 136165990408918, 109588160124256),
+		Sky = sky(111768268101091, 114494240249007, 76886587348610, 84724236443706, 120433760120549, 132164619043950),
 		Atmosphere = { Density = 0.14, Offset = 0.2, Color = rgb(58, 62, 96), Decay = rgb(30, 32, 66), Glare = 0, Haze = 0.6 },
 		ColorCorrectionEffect = { TintColor = rgb(226, 230, 255), Saturation = 0, Contrast = 0.08, Brightness = 0.02 },
 		BloomEffect = { Intensity = 0.9, Size = 24, Threshold = 1.3 },
 		SunRaysEffect = { Intensity = 0 },
-		Lighting = { Brightness = 1.4, OutdoorAmbient = rgb(62, 70, 96), Ambient = rgb(52, 54, 68), ColorShift_Top = rgb(160, 180, 230), EnvironmentDiffuseScale = 1, EnvironmentSpecularScale = 0.8 },
+		Lighting = { Brightness = 1.4, OutdoorAmbient = rgb(84, 92, 124), Ambient = rgb(60, 62, 78), ColorShift_Top = rgb(160, 180, 230), EnvironmentDiffuseScale = 1, EnvironmentSpecularScale = 0.8 },
 	},
 }

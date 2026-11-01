@@ -28,6 +28,12 @@ for _, name in { "SungnyemunGreybox", "Yukchuk", "Chukbu", "Munru", "Gongpo", "G
 	end
 end
 
+-- 도로 차량 메시 원본 (차는 클라이언트가 짓는다, core Traffic). 받는 동안 Place 시작을 막지 않는다
+task.spawn(function()
+	local Traffic = require(ReplicatedStorage.Core.Traffic)
+	require(ReplicatedStorage.Core.Meshes).serve(Traffic.meshes(require(ReplicatedStorage.Shared.Streets)))
+end)
+
 -- 화차: 지붕이 제자리에 돈 뒤에 착지점을 광선으로 찾으므로 맨 끝에 (core Launcher, 데이터 Shared.Hwacha)
 require(ReplicatedStorage.Core.Launcher).serve(require(ReplicatedStorage.Shared.Hwacha))
 
