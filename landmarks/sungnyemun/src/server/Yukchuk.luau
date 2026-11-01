@@ -70,15 +70,16 @@ local function vault(a: Arch, z0: number, z1: number, course: number)
 	end
 	block("YukchukBody", -W, a.spring + a.re, z0, W, H, z1)
 
-	-- 켜 사이 계단 모양 틈을 메우는 바깥 고리 (면에서 조금 들여 앞 돌에 가린다)
+	-- 켜 사이 계단 모양 틈과 홍예석 사이 V자 줄눈 뒤를 메우는 바깥 고리 (홍예석 가운데 반지름부터, 면에서 조금 들여 앞 돌에 가린다)
 	local rb, nb = a.re + 0.6, 24
+	local r0, r1 = (a.ri + a.re) / 2, a.re + 0.55
 	for i = 0, nb - 1 do
 		local t = (i + 0.5) * math.pi / nb
-		local r = a.re + 0.25
+		local r = (r0 + r1) / 2
 		part(
 			"YukchukBody",
 			CFrame.new(r * math.cos(t), a.spring + r * math.sin(t), (z0 + z1) / 2) * CFrame.Angles(0, 0, t - math.pi / 2),
-			Vector3.new(2 * rb * math.sin(math.pi / nb / 2) + 0.05, 0.6, z1 - z0 - 0.12)
+			Vector3.new(2 * rb * math.sin(math.pi / nb / 2) + 0.05, r1 - r0, math.max(z1 - z0 - 0.12, 0.01))
 		)
 	end
 
@@ -219,12 +220,12 @@ return function()
 		part("Cheoryeop", hinge * CFrame.new(-sx * G.leafWidth / 2, G.leafHeight / 2, G.plate / 2), Vector3.new(G.leafWidth, G.leafHeight, G.plate))
 	end
 
-	-- 반자널: 상둔테 뒤부터 북측 홍예까지 동서로 걸친 널
+	-- 반자널: 성문 자리(상둔테 위)부터 북쪽으로 동서로 걸친 널 (홍예 반자)
 	local pk = P.plank
-	local z = zDoor - G.dunte.width
-	while z - pk.width >= zNorth - 1e-3 do
-		block("Banjaneol", -pk.length / 2, hc - pk.thickness, z - pk.width + 0.005, pk.length / 2, hc, z - 0.005)
-		z -= pk.width
+	local pw1 = P.banja.length / pk.count
+	for i = 0, pk.count - 1 do
+		local z1 = zDoor - i * pw1
+		block("Banjaneol", -pk.length / 2, hc - pk.thickness, z1 - pw1 + 0.005, pk.length / 2, hc, z1 - 0.005)
 	end
 
 	-- 통로 바닥 판석: 줄마다 반 장씩 엇갈려 깐다. 윗면은 광장 바닥보다 2 cm 높게 (겹친 면 깜빡임 방지)
