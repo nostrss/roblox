@@ -8,6 +8,9 @@
 --   나각수·나발수(황립·황철릭): 황철릭 도열은 숭례문 사진으로 확인. 무엇을 부는지는 숭례문 사진으로 못 읽었다. 악기 배정은 추정이다.
 --   금군: 황 전복으로 뒀다. 유일한 캡션(MH-2022)은 연보라 전복인데 덕수궁 병력일 수 있고, 2023 영상의 표신 확인 상대는 황 전복이라 어긋난다.
 --   초관: 사진에서 식별하지 못해 넣지 않았다. 덕수궁 복식·의장기 문양은 옮기지 않는다.
+-- 근무 자리 (사진별 정리 refs/pasu-notes.md §13.6): 파수군은 벽 앞 왼쪽(−X) 2 + 오른쪽(+X) 1, 호군은 그보다 앞 가운데 (official/sg05, sp04. 둘 다 호군 1 + 3 = 4명이고 홍예 안에는 아무도 서지 않는다).
+--   mh22_yOciYX는 왼쪽 1 + 오른쪽 3, sp01은 양옆 2명이라 고정 배치는 아니다. 왼쪽 2 + 오른쪽 1은 두 사진이 같아 골랐다. X는 sg05에서 잰 근사값, 벽에서 떨어진 거리와 호군의 Z는 사진으로 못 재 제안값이다.
+--   sg05·sp04의 오른쪽·왼쪽 한 명은 청 전복이지만 여기 파수군은 황·홍만 쓰기로 해서 황으로 뒀다 (어긋남).
 -- 문을 움직이는 7·8번은 사진 판단대로 문 북쪽에 있다 (pasu-notes §13.2). 남쪽에서는 문만 움직여 보인다. 이 둘은 창을 들지 않는다.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Figures = require(ReplicatedStorage.Core.Figures)
@@ -152,7 +155,20 @@ local function player(instrument: { Figures.Box }): { Figures.Box } -- 나각수
 	end
 	return b
 end
-local NAGAK = { rod("armR", 0.5, 0.13, -0.3, 0.98, 0.1, hex("#D8B08C")) }
+-- 나각 (official/sp02에서 형태만: 입에 댄 좁은 끝에서 넓은 몸통으로 굵어지고 손이 몸통 쪽을 받친다. sp02 배경은 숭례문이 아니다).
+-- 팔이 한 토막이라 손이 입에서 멀어 실물보다 길다. 근사: 길이 0.63 m, 지름 0.2 m
+local function nagak(): { Figures.Box }
+	local arm = Figures.armFrame("armR", "blow")
+	local mouth = Vector3.new(0, 1.52, 0.14)
+	local dir = (arm * Vector3.new(-0.3, 0.78, 0) - mouth).Unit
+	local shell = hex("#D8B08C")
+	local function piece(from_: number, to: number, width: number, color: Color3): Figures.Box
+		local c = mouth + dir * (from_ + to) / 2
+		local at = arm:Inverse() * CFrame.lookAt(c, c + dir) * CFrame.Angles(0, math.pi / 2, 0)
+		return { joint = "armR", size = Vector3.new(to - from_, width, width), at = at, color = color, shape = CYL, material = METAL }
+	end
+	return { piece(0, 0.3, 0.07, shell), piece(0.27, 0.63, 0.2, shell), piece(0.4, 0.43, 0.21, hex("#A8744F")) }
+end
 local NABAL = {
 	rod("armR", 1.05, 0.04, -0.3, 0.68, 0.1, hex("#C9A227")),
 	rod("armR", 0.14, 0.13, -0.3, 0.16, 0.1, hex("#C9A227")), -- 나팔 끝
@@ -160,12 +176,13 @@ local NABAL = {
 
 -- 시간표 만들기: 사람 하나의 열쇠 자리를 차례로 잇는다
 local SPEED = 1.25 -- 걷는 속도 m/s. 차분한 행진 (근사)
+local MARCH = 1.6 -- 입장·퇴장 구간 속도 m/s. 먼 자리까지 입취위·퇴장 구간 안에 오간다 (근사)
 type Route = { keys: { Figures.Key }, t: number, x: number, z: number }
 local function from(t: number, x: number, z: number, face: number?): Route
 	return { keys = { { at = t, x = x, z = z, face = face } }, t = t, x = x, z = z }
 end
-local function go(r: Route, x: number, z: number)
-	r.t += math.sqrt((x - r.x) ^ 2 + (z - r.z) ^ 2) / SPEED
+local function go(r: Route, x: number, z: number, speed: number?)
+	r.t += math.sqrt((x - r.x) ^ 2 + (z - r.z) ^ 2) / (speed or SPEED)
 	r.x, r.z = x, z
 	table.insert(r.keys, { at = r.t, x = x, z = z })
 end
@@ -180,8 +197,12 @@ end
 
 local SOUTH, NORTH, TO_X, TO_MINUS_X = 0, math.pi, math.pi / 2, -math.pi / 2
 local LINE_Z = 8.4 -- 남측면 앞 판석 띠
-local NORTH_START = -12 -- 인물이 나타나고 사라지는 자리: 북측면에서 약 5.6 m 북쪽. ponytail: 그 자리에서 그냥 나타난다. 어색하면 더 멀리 잡는다
+-- 인물이 나타나고 사라지는 자리: 북측면에서 약 15.6 m 북쪽 흙 마당. 더 멀면 25초 안에 양끝 자리까지 못 온다 (22 + 7 + 10 m ÷ MARCH = 24.4초).
+-- ponytail: 북쪽 가까이 선 방문자에게는 서서히 나타나는 모습이 보인다. 안 보이게 하려면 입취위·퇴장 구간을 늘린다
+local NORTH_START = -22
 local ARCH_X = 1.2 -- 통로를 지나는 두 줄의 X
+local HOGUN_POST = 10.5 -- 호군 근무 자리 Z. 제안값: 도열 자리와 같다. sg05·sp04에서 앞 가운데인 것만 사진 근거
+local POST = { left = -4.2, far = -5.0, right = 5.4 } -- 근무 파수군 X. 근사: sg05 벽 앞 발 위치를 홍예 폭으로 환산
 
 -- T: 회차 구간 시작 시각, LEN: 구간 길이 (Gaepye.luau)
 return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Config
@@ -192,16 +213,16 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 	local function enter(x: number, z: number, delay: number): Route
 		local side = if x < 0 then -1 else 1
 		local r = from(T.enter + delay, side * ARCH_X, NORTH_START, SOUTH)
-		go(r, side * ARCH_X, 7)
-		go(r, x, z)
+		go(r, side * ARCH_X, 7, MARCH)
+		go(r, x, z, MARCH)
 		return r
 	end
 	-- 자기 자리에서 통로로 들어가 북쪽으로
 	local function leave(r: Route, delay: number)
 		local side = if r.x < 0 then -1 else 1
 		stay(r, T.exit + delay, nil, SOUTH)
-		go(r, side * ARCH_X, 7)
-		go(r, side * ARCH_X, NORTH_START)
+		go(r, side * ARCH_X, 7, MARCH)
+		go(r, side * ARCH_X, NORTH_START, MARCH)
 	end
 
 	-- 문 곁 자리: 문짝 닫힘 k일 때. 처음에는 열린 문짝 끝 너머에 섰다가 문짝 뒤(북쪽)로 붙는다
@@ -228,10 +249,8 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 		end
 	end
 
-	-- 1 호군: 근무 자리(문 앞 가운데) → 앞 → 표신 확인 → 문 앞 → 근무 자리
-	local r1 = from(0, 0, 7.2, SOUTH)
-	stay(r1, T.enter + 16, nil, SOUTH)
-	go(r1, 0, 10.5)
+	-- 1 호군: 근무 자리(문 앞 가운데, 홍예에서 약 5 m 앞) → 표신 확인 → 문 앞 → 근무 자리
+	local r1 = from(0, 0, HOGUN_POST, SOUTH)
 	stay(r1, T.check + 1, nil, SOUTH)
 	go(r1, 0, 16)
 	stay(r1, T.check + 16, "stand", NORTH)
@@ -241,10 +260,8 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 	stay(r1, T.open, nil, NORTH)
 	stay(r1, T.open + 3, "command", NORTH)
 	stay(r1, T.finish + 1, nil, NORTH)
-	go(r1, 0, 10.5)
-	stay(r1, T.exit + 2, nil, SOUTH)
-	go(r1, 0, 7.2)
-	stay(r1, r1.t + 1, nil, SOUTH)
+	go(r1, 0, HOGUN_POST)
+	stay(r1, T.exit, nil, SOUTH)
 
 	-- 2 선전관, 3 금군: 줄 → 흙 마당에서 마주 선다 → 문 앞 → 재확인 → 줄
 	local function checker(x: number, delay: number, faceIn: number): Route
@@ -264,11 +281,11 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 	end
 	local r2 = checker(-9.2, 1.2, TO_X)
 	local r3 = checker(9.2, 1.2, TO_MINUS_X)
-	leave(r2, 0.8)
-	leave(r3, 1.2)
+	leave(r2, 0.35) -- 같은 줄 앞뒤 사람과 겹치지 않는 값 (5·6번보다 약 1.4 m 앞)
+	leave(r3, 0.35)
 
 	-- 4 금루관: 호군 곁. 인정·파루에 징
-	local r4 = enter(2.3, 10.5, 4.8)
+	local r4 = enter(2.3, 10.5, 2.4)
 	stay(r4, T.injeong, nil, SOUTH)
 	stay(r4, T.injeong + 3, "strike", SOUTH)
 	stay(r4, T.check + 16, nil, SOUTH)
@@ -285,13 +302,13 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 	stay(r5, T.injeong + 10, "blow", SOUTH)
 	stay(r5, T.paru + 3, nil, SOUTH)
 	stay(r5, T.paru + 10, "blow", SOUTH)
-	leave(r5, 1.6)
+	leave(r5, 0)
 	local r6 = enter(11.2, LINE_Z, 0)
 	stay(r6, T.injeong + 7, nil, SOUTH)
 	stay(r6, T.injeong + 15, "longblow", SOUTH)
 	stay(r6, T.paru + 7, nil, SOUTH)
 	stay(r6, T.paru + 15, "longblow", SOUTH)
-	leave(r6, 1.6)
+	leave(r6, 0)
 
 	-- 7·8 파수군: 줄 → 통로를 지나 문 북쪽 → 닫고 → 기다렸다 열고 → 줄
 	local function pusher(x: number, delay: number): Route
@@ -327,19 +344,19 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 		go(r, post, 7)
 		stay(r, r.t + 1, nil, SOUTH)
 	end
-	local r9 = dutyMan(-3.4, -5.2)
-	backToPost(r9, -3.4)
-	local r10 = dutyMan(3.4, 5.2)
-	backToPost(r10, 3.4)
-	local r11 = dutyMan(-5.2, -7.1)
+	local r9 = dutyMan(POST.left, -5.2)
+	backToPost(r9, POST.left)
+	local r10 = dutyMan(POST.right, 5.2)
+	backToPost(r10, POST.right)
+	local r11 = dutyMan(POST.far, -7.1)
 	stay(r11, T.check, nil, SOUTH)
 	go(r11, -1, 16.6)
-	stay(r11, T.check + 15, "carrybox", TO_X)
+	stay(r11, T.check + 15, nil, TO_X)
 	go(r11, -7.1, LINE_Z)
-	backToPost(r11, -5.2)
+	backToPost(r11, POST.far)
 
 	-- 12 파수군
-	local r12 = enter(7.1, LINE_Z, 2.4)
+	local r12 = enter(7.1, LINE_Z, 4.8)
 	leave(r12, 0.8)
 
 	local figures: { Figures.Figure } = {
@@ -347,15 +364,18 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 		{ boxes = seonjeongwan(), keys = r2.keys },
 		{ boxes = geumgun(), keys = r3.keys },
 		{ boxes = geumrugwan(), keys = r4.keys, carry = { armL = true } },
-		{ boxes = player(NAGAK), keys = r5.keys, carry = { armR = true } },
+		{ boxes = player(nagak()), keys = r5.keys, carry = { armR = true } },
 		{ boxes = player(NABAL), keys = r6.keys, rest = "horn", carry = { armR = true } },
 		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, false), keys = r7.keys },
 		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, false), keys = r8.keys },
 		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, true), keys = r9.keys, duty = true, carry = { armR = true } },
 		{ boxes = jeongbyeong(YELLOW, SKIRT, PURPLE, true), keys = r10.keys, duty = true, carry = { armR = true } },
-		{ boxes = jeongbyeong(RED_COAT, SKIRT, PURPLE, true), keys = r11.keys, duty = true, carry = { armR = true } },
+		{ boxes = jeongbyeong(RED_COAT, SKIRT, PURPLE, true), keys = r11.keys, duty = true, rest = "carrybox", carry = { armL = true, armR = true } },
 		{ boxes = jeongbyeong(RED_COAT, SKIRT, PURPLE, true), keys = r12.keys, carry = { armR = true } },
 	}
+	for _, f in figures do
+		assert(f.duty or f.keys[#f.keys].at <= T.exit + LEN.exit, "퇴장이 회차 안에 끝나지 않는다")
+	end
 	-- 약시함: 11번 왼손 (모양·색은 근사, 프레임의 짙은 적갈 상자)
 	table.insert(figures[11].boxes, box("armL", 0.3, 0.16, 0.2, 0.2, 0.74, 0.1, hex("#5A2E22")))
 

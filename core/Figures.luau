@@ -27,7 +27,7 @@ export type Key = { at: number, x: number, z: number, pose: string?, face: numbe
 export type Figure = {
 	boxes: { Box },
 	keys: { Key },
-	duty: boolean?, -- 회차 밖에도 서 있다 (마지막 열쇠 자리). 아니면 첫 열쇠 전과 마지막 열쇠 뒤에는 보이지 않는다
+	duty: boolean?, -- 회차 밖에도 서 있다 (마지막 열쇠 자리). 아니면 첫 열쇠 전과 마지막 열쇠 뒤에는 보이지 않고, 그 앞뒤로 서서히 나타나고 사라진다
 	rest: string?, -- pose가 없을 때의 자세. 없으면 "stand"
 	carry: { armL: boolean?, armR: boolean? }?, -- 걸을 때 흔들지 않는 팔 (물건을 든 쪽)
 }
@@ -47,13 +47,14 @@ local POSES: { [string]: Pose } = {
 	hold = { armL = { -1.05, -0.4 }, armR = { -1.05, 0.4 }, lean = 0 }, -- 두 손을 가슴 앞에 (표신·상자)
 	carrybox = { armL = { -1.1, -0.3 }, armR = { 0, 0 }, lean = 0 }, -- 왼팔로 상자를 받쳐 든다 (오른손 창은 그대로)
 	command = { armL = { 0, 0 }, armR = { -1.45, 0 }, lean = 0 }, -- 등채를 든 지휘
-	blow = { armL = { -1.25, -0.35 }, armR = { -1.85, 0.42 }, lean = -0.04 }, -- 나각
+	blow = { armL = { -1.25, -0.35 }, armR = { -1.85, 0.12 }, lean = -0.04 }, -- 나각: 오른손을 앞으로 뻗어 입에서 나온 나각을 받친다
 	horn = { armL = { 0, 0 }, armR = { -0.55, 0.05 }, lean = 0 }, -- 나발을 들고 선 자세
 	longblow = { armL = { -1.35, -0.4 }, armR = { -1.65, 0.4 }, lean = -0.04 }, -- 나발 불기
 	strike = { armL = { -1.15, -0.25 }, armR = { -1.3, 0.35 }, lean = 0 }, -- 징 치기
 }
 
 local BLEND = 0.5 -- 자세가 바뀌는 시간(초)
+local FADE = 1.5 -- 첫·마지막 열쇠에서 나타나고 사라지는 시간(초). 회차 밖에 없는 인물만
 local TURN = 0.6 -- 방향이 바뀌는 시간(초)
 local EASE = 0.3 -- 걸음이 시작·끝나는 시간(초)
 local STRIDE = 1.5 -- 걸음 한 주기 거리(m)
@@ -65,6 +66,13 @@ local SHOULDER = { x = 0.27, y = 1.36 } -- 어깨 관절 (m)
 local S = Units.studs(1)
 
 local Figures = {}
+
+-- 자세의 팔 변환 (m). 든 물건을 그 자세에서 놓일 자리에 맞출 때 Place 데이터가 쓴다
+function Figures.armFrame(side: "armL" | "armR", pose: string): CFrame
+	local a = (POSES[pose] :: any)[side] :: { number }
+	local pv = CFrame.new(if side == "armL" then SHOULDER.x else -SHOULDER.x, SHOULDER.y, 0)
+	return pv * CFrame.Angles(a[1], 0, a[2]) * pv:Inverse()
+end
 
 type Seg = {
 	at: number, t1: number, x: number, z: number, nx: number, nz: number,
@@ -203,7 +211,7 @@ function Figures.start(config: Config): (t: number) -> ()
 
 	type Live = {
 		figure: Figure, segs: { Seg }, holder: Folder, parts: { BasePart }, joints: { Joint }, rel: { CFrame },
-		first: number, last: number, shown: boolean, restingOn: any, -- 이 구간의 멈춘 자세로 이미 놓였다
+		first: number, last: number, shown: boolean, restingOn: any, alpha: number, -- restingOn: 이 구간의 멈춘 자세로 이미 놓였다. alpha: 지금 보이는 정도
 	}
 	local live: { Live } = {}
 	for n, figure in config.figures do
@@ -219,7 +227,7 @@ function Figures.start(config: Config): (t: number) -> ()
 		end
 		live[n] = {
 			figure = figure, segs = segments(figure), holder = holder, parts = parts, joints = joints, rel = rel,
-			first = figure.keys[1].at, last = figure.keys[#figure.keys].at, shown = false, restingOn = nil,
+			first = figure.keys[1].at, last = figure.keys[#figure.keys].at, shown = false, restingOn = nil, alpha = 1,
 		}
 	end
 	folder.Parent = workspace
@@ -268,6 +276,15 @@ function Figures.start(config: Config): (t: number) -> ()
 				l.restingOn = nil
 			end
 			if visible then
+				if not l.figure.duty then
+					local a = math.clamp(math.min(t - l.first, l.last - t) / FADE, 0, 1)
+					if a ~= l.alpha then
+						l.alpha = a
+						for _, p in l.parts do
+							p.Transparency = 1 - a
+						end
+					end
+				end
 				local st = stateAt(l.segs, t)
 				-- 멈춰 있어도 구간이 바뀌었으면 놓는다 (도중 접속은 멈춘 자세에서 멈춘 자세로 건너뛴다)
 				if not st.still or l.restingOn ~= st.seg then
