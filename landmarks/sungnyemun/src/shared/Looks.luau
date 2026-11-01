@@ -31,7 +31,7 @@ return {
 		Lighting = { Brightness = 2.8, OutdoorAmbient = rgb(118, 100, 112), Ambient = rgb(70, 56, 60), ColorShift_Top = rgb(255, 176, 104), EnvironmentDiffuseScale = 1, EnvironmentSpecularScale = 1 },
 	},
 	night = {
-		Sky = sky(111768268101091, 114494240249007, 76886587348610, 84724236443706, 120433760120549, 132164619043950),
+		Sky = sky(134621696452368, 114576810942815, 71280896274677, 113512236693112, 72406569135805, 108349560716143),
 		Atmosphere = { Density = 0.14, Offset = 0.2, Color = rgb(58, 62, 96), Decay = rgb(30, 32, 66), Glare = 0, Haze = 0.6 },
 		ColorCorrectionEffect = { TintColor = rgb(226, 230, 255), Saturation = 0, Contrast = 0.08, Brightness = 0.02 },
 		BloomEffect = { Intensity = 0.9, Size = 24, Threshold = 1.3 },

@@ -87,7 +87,7 @@ const PRESETS = {
     zenith: srgb(0x060a1c), mid: srgb(0x101838), horizon: srgb(0x2a2a48),
     glow: srgb(0x8a95c0), glowPow: 40, glowAmt: 0.04, wide: 0,
     antiBand: 0, sunCol: [0.1, 0.12, 0.18], ambient: srgb(0x161b30), ambientAmt: 0.45,
-    coverage: 0.47, sharp: 0.17, cirrus: 0.08, cirrusCol: [0.12, 0.13, 0.2], haze: srgb(0x2e2c44),
+    coverage: 0.47, sharp: 0.17, cirrus: 0.08, cirrusCol: [0.12, 0.13, 0.2], haze: srgb(0x2e2c44), gain: 16, // Roblox가 밤하늘을 크게 어둡게 그려 미리 밝게 굽는다
     mountain: { low: srgb(0x2a2638), high: srgb(0x0b0d18), tower: srgb(0x0b0d18) },
     cityGlow: srgb(0xb0703c),
   },
@@ -350,7 +350,7 @@ function render(name) {
         f.n[1] + f.u[1] * u + f.v[1] * v,
         f.n[2] + f.u[2] * u + f.v[2] * v,
       ]);
-      const c = shade(d, P);
+      const c = shade(d, P).map((v) => v * (P.gain ?? 1));
       const dith = (Math.random() - 0.5) * 1.0; // 띠 무늬 방지
       rgb[i] = clamp(tone(c[0]) * 255 + dith, 0, 255);
       rgb[i + 1] = clamp(tone(c[1]) * 255 + dith, 0, 255);

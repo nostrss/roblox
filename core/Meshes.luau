@@ -2,6 +2,7 @@
 -- 공개·생성 메시 원본: 서버가 에셋 ID로 받아 ReplicatedStorage에 두고, 클라이언트는 복제해 쓴다.
 -- CreateMeshPartAsync는 서버에서만 된다. Studio에 모델을 저장하지 않아도 코드만으로 지어진다 (ADR 0011).
 local AssetService = game:GetService("AssetService")
+local ContentProvider = game:GetService("ContentProvider")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -45,6 +46,18 @@ function Meshes.serve(specs: { Spec })
 			end
 		end
 	end
+end
+
+-- 클라이언트에서 한 번 부른다: 원본을 미리 받아 둔다. 처음 쓰는 순간 받으면 인물·차가 잠깐 보이지 않는다 (Play에서 확인)
+function Meshes.preload()
+	assert(RunService:IsClient(), "미리 받기는 클라이언트에서 한다")
+	task.spawn(function()
+		local folder = ReplicatedStorage:WaitForChild(FOLDER)
+		folder.ChildAdded:Connect(function(m)
+			ContentProvider:PreloadAsync({ m })
+		end)
+		ContentProvider:PreloadAsync(folder:GetChildren())
+	end)
 end
 
 -- 복제본. wait초까지 기다리고, 없으면 nil

@@ -133,10 +133,21 @@ function litColor(floorOn) {
   return [c[0] * dim, c[1] * dim, c[2] * dim, 0.9];
 }
 
+// 밤 바탕: 어두운 남색으로 면 전체를 덮는다. 창 불빛 판은 대기·조명을 받지 않아, 비워 두면 창만 하늘에 떠 보인다
+function nightBase(img, wallColor) {
+  const k = (wallColor[0] + wallColor[1] + wallColor[2]) / 3;
+  img.rect(0, 0, 1, 1, (u, v) => {
+    const g = 0.9 + fine(u, v) * 0.2;
+    return [(0.035 + k * 0.05) * g, (0.042 + k * 0.05) * g, (0.075 + k * 0.05) * g, 1];
+  });
+  for (let f = 0; f < 8; f++) img.rect(0, f / 8, 1, f / 8 + 0.002, [0.07, 0.08, 0.12, 1]); // 층 선
+}
+
 // 격자 입면 공통: 벽 → 칸마다 창. window(cx0, cy0, cx1, cy1)은 칸 안 창 사각형 비율
 function gridFacade(name, opts) {
   const day = new Img(SIZE, SIZE), night = new Img(SIZE, SIZE);
   day.rect(0, 0, 1, 1, wall(opts.wall, opts.amp, opts.streak));
+  nightBase(night, opts.wall);
   const F = 8, B = 8;
   for (let f = 0; f < F; f++) {
     const floorOn = rnd() < 0.5 ? 0.06 : rnd() < 0.6 ? 0.25 : 0.55;
@@ -220,6 +231,7 @@ gridFacade("concrete", {
 {
   const day = new Img(SIZE, SIZE), night = new Img(SIZE, SIZE);
   day.rect(0, 0, 1, 1, wall(hex(0xa9a196), 0.12, 0.12));
+  nightBase(night, hex(0xa9a196));
   const COLORS = [0xc7362f, 0x1f5fa8, 0xf0c02a, 0xf4f1e6, 0x2c8a4b, 0xe46c1e, 0x222428, 0x7a2c8c].map(hex);
   for (let f = 0; f < 8; f++) {
     for (let b = 0; b < 8; b++) {
@@ -259,6 +271,7 @@ gridFacade("concrete", {
   const W = 1024, H = 192;
   const day = new Img(W, H), night = new Img(W, H);
   day.rect(0, 0, 1, 1, wall(hex(0x8d877e), 0.1, 0));
+  night.rect(0, 0, 1, 1, [0.07, 0.07, 0.1, 1]);
   const COLORS = [0xb8342c, 0x1d5a9e, 0xe8b820, 0xf0ede0, 0x2a7f46, 0xd9641b, 0x202226].map(hex);
   let b = 0;
   while (b < 8) {

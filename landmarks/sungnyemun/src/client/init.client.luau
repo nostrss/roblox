@@ -7,6 +7,7 @@ local Units = require(ReplicatedStorage.Core.Units)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local TimeOfDay = require(ReplicatedStorage.Core.TimeOfDay)
 
+require(ReplicatedStorage.Core.Meshes).preload() -- 인물·차 메시를 미리 받아 둔다
 require(ReplicatedStorage.Core.Intro).start(require(ReplicatedStorage.Shared.Intro)) -- 입장 안내: 접속마다 한 번 (리스폰 때는 안 뜬다)
 TimeOfDay.start(require(ReplicatedStorage.Shared.Looks)) -- 실제 서울 시각 + 지금/노을/밤 고르기, 야간 조명
 require(ReplicatedStorage.Core.Ambience).start(require(ReplicatedStorage.Shared.Soundscape)) -- 바람·차 소리·새·풀벌레, 홍예 울림

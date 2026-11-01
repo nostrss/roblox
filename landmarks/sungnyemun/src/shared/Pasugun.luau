@@ -85,8 +85,8 @@ local function body(d: Dress): { Figures.Box }
 		mesh("legL", M.boot, 0.17, 0.46, 0.3, 0.1, 0.23, 0.02),
 		mesh("legR", M.boot, 0.17, 0.46, 0.3, -0.1, 0.23, 0.02),
 		mesh("upper", d.torso, 0.56, d.torsoHeight, d.torsoDepth, 0, 1.42 - d.torsoHeight / 2, 0, true),
-		mesh("armL", d.arm, 0.19, 0.68, 0.19, 0.255, 1.05, 0),
-		mesh("armR", d.arm, 0.19, 0.68, 0.19, -0.255, 1.05, 0),
+		mesh("armL", d.arm, 0.17, 0.64, 0.17, 0.25, 1.05, 0),
+		mesh("armR", d.arm, 0.17, 0.64, 0.17, -0.25, 1.05, 0),
 		mesh("upper", M.head, 0.235, 0.345, 0.22, 0, 1.54, 0.01),
 		d.hat,
 	}
