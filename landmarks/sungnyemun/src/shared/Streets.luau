@@ -83,7 +83,7 @@ end
 local buses = { blueBus, blueBus, redBus }
 local sowolKinds = { sedan, sedan, sedan, taxi, greenBus }
 local config: Traffic.Config = {
-	max = 8,
+	max = 14,
 	lanes = {
 		lane(Lanes.sejong, "north", 12, { 6, 30 }, cars),
 		lane(Lanes.sejong, "south", 12, { 6, 30 }, cars),

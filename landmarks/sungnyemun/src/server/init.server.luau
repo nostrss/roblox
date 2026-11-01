@@ -15,6 +15,7 @@ require(script.Plaza)() -- 광장·도로는 세계 좌표로 바로 놓는다 (
 require(script.Chaseon)() -- 차선 도색도 세계 좌표 그대로 (도로 차량과 같은 Shared.Lanes)
 require(script.Silhouette)() -- 주변 건물 실루엣도 세계 좌표 그대로
 require(script.Jomyeong)() -- 야간 조명 기구 (켜고 끄기는 클라이언트 core TimeOfDay)
+require(script.Jogyeong)() -- 광장·길 조경: 나무, 생울타리, 의자, 길 조명, 가로등. 세계 좌표 그대로
 
 -- 건물 자리(ADR 0004): 자기 축으로 지은 루트 Model을 통째로 돌려 놓는다 (Shared.Site).
 

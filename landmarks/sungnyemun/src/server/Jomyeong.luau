@@ -53,25 +53,7 @@ local EAVES = {
 }
 local EAVE = { brightness = 2, range = 16, angle = 80 }
 
--- 광장 바닥(연석 안쪽 보도 띠 안) 다각형과, 점이 그 안에서 모든 변으로부터 margin m 이상 떨어졌나 (건물 축)
-local floorPoly = {}
-for i = 1, #Plaza.curb do
-	floorPoly[i] = { Plaza.radial(i, -Plaza.bandWidth) }
-end
-local function onFloor(x: number, z: number, margin: number): boolean
-	if not Plaza.inside(x, z, floorPoly) then
-		return false
-	end
-	for i, a in floorPoly do
-		local b = floorPoly[i % #floorPoly + 1]
-		local dx, dz = b[1] - a[1], b[2] - a[2]
-		local t = math.clamp(((x - a[1]) * dx + (z - a[2]) * dz) / (dx * dx + dz * dz), 0, 1)
-		if math.sqrt((a[1] + dx * t - x) ^ 2 + (a[2] + dz * t - z) ^ 2) < margin then
-			return false
-		end
-	end
-	return true
-end
+local onFloor = Plaza.onFloor
 
 -- 가로등 { x, z } — 정면 흙 마당(X ±13) 양옆 잔디 가장자리. 근사: 실제 가로등 자리 자료 없음.
 -- 광장은 남쪽(+Z)으로 갈수록 서쪽이 좁아진다(Z 50에서 서쪽 연석 X −14) → 바닥 가장자리에서 2 m 안이 되도록 가운데 쪽으로 당긴다
@@ -106,8 +88,8 @@ local POLE = 4 -- 근사: 가로등 높이(m)
 -- PointLight라 벽에 빛 경계가 없고 반자 남북이 고르다. Shadows는 반자 위 공포로 새지 않게 켠다 (Play에서 확인)
 local TONGNO = {
 	below = 2, -- 반자 아래 m
-	range = 18, -- 닿는 거리(스터드). 통로 바닥까지 닿고, 북측 홍예 밖 바닥에 조금 샌다
-	lights = { { Tags.DAY_LIGHT, Color3.new(1, 1, 1), 2 }, { Tags.NIGHT_LIGHT, WARM, 1.2 } }, -- { 태그, 색, 밝기 }
+	range = 24, -- 닿는 거리(스터드). 통로 바닥까지 닿고, 북측 홍예 밖 바닥에 조금 샌다
+	lights = { { Tags.DAY_LIGHT, Color3.new(1, 1, 1), 2 }, { Tags.NIGHT_LIGHT, WARM, 3 } }, -- { 태그, 색, 밝기 }. 저녁 "통로가 너무 어둡다" 지적으로 밤 밝기를 올렸다
 }
 
 -- 판문 빛: 판문이 있는 남측 홍예 안은 해도 투광등도 닿지 않아 닫힌 문이 까맣다. 통로 빛처럼 낮·밤 하나씩, 한 번에 하나만 켜진다. 근사: 값은 Play에서 눈으로 맞췄다
@@ -115,7 +97,7 @@ local PANMUN = {
 	out = 1.6, -- 판문 자리에서 남쪽 m
 	height = 3.5, -- 지면 위 m
 	range = 20, -- 스터드
-	lights = { { Tags.DAY_LIGHT, Color3.new(1, 1, 1), 0.9 }, { Tags.NIGHT_LIGHT, WARM, 0.8 } }, -- { 태그, 색, 밝기 }
+	lights = { { Tags.DAY_LIGHT, Color3.new(1, 1, 1), 0.9 }, { Tags.NIGHT_LIGHT, WARM, 2 } }, -- { 태그, 색, 밝기 }
 }
 
 local model: Model

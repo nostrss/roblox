@@ -32,7 +32,7 @@ local paint: { [string]: Paint } = {
 	okgaeseok = { material = Enum.Material.Granite, color = Color3.fromRGB(150, 145, 140) }, -- 여장 옥개석 (그늘져 보여 한 단 어둡게)
 	-- 광장·도로 (색은 S13 영상·사용자 항공 사진을 눈으로 참고)
 	masato = { material = Enum.Material.Sand, color = Color3.fromRGB(196, 176, 140) }, -- 흙(마사토) 마당
-	bakseok = { material = Enum.Material.Slate, color = Color3.fromRGB(168, 164, 156) }, -- 박석 광장
+	bakseok = { material = Enum.Material.Concrete, color = Color3.fromRGB(150, 146, 138) }, -- 박석 광장 (무늬는 Facades.bakseok 텍스처. Slate는 노을에 얼음처럼 번들거렸다)
 	jandi = { material = Enum.Material.Grass, color = Color3.fromRGB(92, 120, 64) }, -- 잔디, 성곽 뒤 비탈
 	bodo = { material = Enum.Material.Pavement, color = Color3.fromRGB(150, 146, 140) }, -- 보도 포장
 	asphalt = { material = Enum.Material.Asphalt, color = Color3.fromRGB(58, 58, 60) }, -- 차도
@@ -45,6 +45,11 @@ local paint: { [string]: Paint } = {
 	silhouetteA = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(178, 176, 170) },
 	silhouetteB = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(156, 156, 154) },
 	silhouetteC = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(190, 184, 172) },
+	-- 광장 조경 (근사: 색은 눈대중)
+	gyeongyeseok = { material = Enum.Material.Granite, color = Color3.fromRGB(150, 146, 138) }, -- 잔디·마당 경계석, 의자 다리
+	saengul = { material = Enum.Material.LeafyGrass, color = Color3.fromRGB(58, 84, 46) }, -- 생울타리
+	uijapan = { material = Enum.Material.WoodPlanks, color = Color3.fromRGB(122, 88, 58) }, -- 의자 앉음판
+	cheol = { material = Enum.Material.Metal, color = Color3.fromRGB(46, 48, 52) }, -- 가로등 기둥
 }
 
 -- 부재 이름(Part.Name) → 칠. 없는 이름은 뇌록 (S7 p.460 뇌록 주바탕). 축부·공포·연목·부연·초매기·이매기·추녀·사래가
@@ -78,6 +83,8 @@ local byName: { [string]: string } = {
 	Masato = "masato", Bakseok = "bakseok", Jandi = "jandi", Bodo = "bodo", Asphalt = "asphalt", Ongbyeok = "ongbyeok", Hoengdan = "hoengdan",
 	ChaseonWhite = "hoengdan", ChaseonYellow = "chaseonYellow", ChaseonBlue = "chaseonBlue",
 	SilhouetteA = "silhouetteA", SilhouetteB = "silhouetteB", SilhouetteC = "silhouetteC",
+	GeonmulCheoma = "silhouetteB", GeonmulOktap = "silhouetteB", GeonmulSeolbi = "silhouetteB", GeonmulSangga = "silhouetteB",
+	Gyeonggyeseok = "gyeongyeseok", Saengul = "saengul", UijaDari = "gyeongyeseok", UijaPan = "uijapan", Cheol = "cheol",
 }
 
 local function of(name: string): Paint

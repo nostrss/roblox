@@ -9,3 +9,7 @@ sourcemap.json
 
 # 원본 참고자료(도면·PDF) — git 제외, 출처는 SOURCES.md
 landmarks/*/refs/
+
+# 생성 도구(tools/sky_cube.mjs, facade_png.mjs)가 다시 만드는 큰 PNG. 올린 에셋 ID는 Looks·Facades에 있다
+landmarks/sungnyemun/textures/sky/
+landmarks/sungnyemun/textures/city/
