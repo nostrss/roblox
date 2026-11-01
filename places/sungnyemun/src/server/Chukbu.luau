@@ -1,11 +1,12 @@
 --!strict
 -- 축부(기둥·창방·평방·대보·충량·외목도리)를 Part로 짓는다. 단면이 일정한 부재라 메시 없이 Part로 충분하다.
--- 원점 = 문루 중심 지면, 남 = +Z, 동 = +X. ponytail: 초석·장화반·보머리 삼분두, 상층 주심·내목·중·종도리(지붕 가구, C 단계)는 아직
+-- 원점 = 문루 중심 지면, 건물 축(정면 = +Z, 정면 기준 동쪽 = +X). ponytail: 초석·장화반·보머리 삼분두, 상층 주심도리·종보·대공은 아직
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Units = require(ReplicatedStorage.Core.Units)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local K = require(ReplicatedStorage.Shared.Chukbu)
+local setup = require(script.Parent.Member)
 
 local s = Units.studs
 local L = D.level
@@ -37,9 +38,7 @@ return function()
 	local function part(name: string, cf: CFrame, size: Vector3, cylinder: boolean?)
 		local p = Instance.new("Part")
 		p.Name = name
-		p.Anchored = true
-		p.Material = Enum.Material.Wood
-		p.Color = WOOD
+		setup(p, WOOD, true) -- 기둥 등 축부는 지금처럼 부딪힌다
 		p.Size = Vector3.new(s(size.X), s(size.Y), s(size.Z))
 		p.CFrame = cf
 		if cylinder then
@@ -173,6 +172,17 @@ return function()
 		beam("UpperOuterDori", a - d, b + d, L.upperEave, uod.dia, uod.dia, true)
 		beam("UpperOuterJangyeo", a, b, L.upperEave - uoj.height, uoj.width, uoj.height)
 	end)
+
+	-- 상층 내목도리·중도리(둘레)와 종도리(용마루 밑 한 줄). ponytail: 받치는 종보·대공·동자주는 아직
+	for _, d in { { "UpperInnerDori", K.upperInnerDori }, { "Jungdori", K.jungdori } } do
+		local k = d[2]
+		rect(px - k.inset, pz - k.inset, function(a, b)
+			local e = (b - a).Unit * k.dia / 2
+			beam(d[1], a - e, b + e, k.top - k.dia, k.dia, k.dia, true)
+		end)
+	end
+	local jd = K.jongdori
+	beam("Jongdori", Vector2.new(-jd.halfLength, 0), Vector2.new(jd.halfLength, 0), jd.top - jd.dia, jd.dia, jd.dia, true)
 
 	model.Parent = workspace
 end

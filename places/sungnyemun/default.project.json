@@ -57,6 +57,7 @@
           0
         ],
         "Brightness": 2,
+        "GeographicLatitude": 37.56,
         "GlobalShadows": true,
         "Outlines": false,
         "Technology": "Voxel"

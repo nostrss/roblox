@@ -19,4 +19,8 @@ return {
 	upperOuterDori = { dia = 0.400, outset = 1.110 }, -- S4 102 상층외목도리 (외3출목)
 	upperOuterJangyeo = { width = 0.108, height = 0.154 }, -- 하층 장여와 같은 단면으로 둔다 (S4 116 미확인)
 	lowerInnerDori = { dia = 0.384, inset = 0.740, top = 4.883 }, -- S4 101 하층내목도리 지름, 윗면 S4 021 1F_INSIDE_DORI_UPPER +13.021 − 8.138
+	-- 상층 지붕 가구: 위치는 상층 기둥열에서 안쪽으로, 윗면 레벨은 S4 017 종단면도(하층 외목도리 윗면 4.298 기준으로 맞춤)
+	upperInnerDori = { dia = 0.384, inset = 0.739, top = 9.556 }, -- 상층내목도리 (내목 출목은 017에서 0.739)
+	jungdori = { dia = 0.384, inset = 1.693, top = 9.929 }, -- 중도리. 장연 안쪽 받침
+	jongdori = { dia = 0.400, halfLength = 7.388, top = 10.689 }, -- 종도리. 길이 = 추녀선이 용마루와 만나는 점(±7.388)
 }
