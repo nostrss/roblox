@@ -112,6 +112,9 @@ local config: Ceremony.Config = {
 		yonggoA = { id = 105984165957935, volume = 0.5 }, -- refs/pasu/sound/Yonggo_1.wav (2026-11-01 사용자 업로드) S32
 		yonggoB = { id = 77610549643743, volume = 0.5 }, -- refs/pasu/sound/Yonggo_2.wav (2026-11-01 사용자 업로드) S33
 		door = { id = 95190972742619, volume = 0.5 }, -- 판문이 움직이기 시작할 때 (폐문·개문). "Metal Gate Open" (S35)
+		-- 파수군 발소리 (S42). 음원 자체가 작다: PlaybackLoudness 평균 4.7·최고 47 (문 소리 46·107, 나각 280·362).
+		-- 근사: 최고치가 문 소리와 비슷하고 평균은 그 아래가 되는 크기 (문 소리 Play 측정 기준, 사용자가 들어 보고 다듬는다)
+		footstep = { id = 120362768144536, volume = 1.5 },
 		doorShut = { id = 5930776732, volume = 0.5 }, -- 완전히 닫힐 때 (개문 때는 없음). "doormetalgateclose1" (S36)
 	},
 	volume = 0.8,
@@ -120,6 +123,7 @@ local config: Ceremony.Config = {
 	button = "gaepye.start",
 	buttonBusy = "gaepye.busy",
 	figures = Pasugun(T, LEN :: any),
+	footsteps = { sound = "footstep", rolloff = { 30, 150 } }, -- 근사: 거리(m). 시작 위치(문에서 약 60 m)에서도 들리게 넓혔다
 }
 
 return config

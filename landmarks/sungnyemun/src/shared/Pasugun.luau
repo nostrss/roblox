@@ -243,6 +243,7 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 			local x, z, face = beside(sx, if closing then k else 1 - k)
 			local last = r.keys[#r.keys]
 			last.pose = "push"
+			last.silent = true -- 문짝을 따라가는 동안은 발소리를 내지 않는다
 			last.face = face
 			r.t, r.x, r.z = t0 + len * u, x, z
 			table.insert(r.keys, { at = r.t, x = x, z = z, face = face })
