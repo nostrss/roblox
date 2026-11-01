@@ -20,6 +20,18 @@ local paint: { [string]: Paint } = {
 	myeonseok = { material = Enum.Material.Granite, color = Color3.fromRGB(196, 190, 182) }, -- 육축 면석 (돌마다 Greybox가 명도를 흔든다)
 	jeondol = { material = Enum.Material.Concrete, color = Color3.fromRGB(118, 118, 115) }, -- 여장 전돌 회색 (S7 p.200). Brick 재질은 무늬가 붉어 회색 전돌로 안 보임 → 사진 필요
 	gidan = { material = Enum.Material.Granite, color = Color3.fromRGB(160, 156, 150) }, -- 문루 기단
+	-- 성곽: 신재 포천석 담회색에 약간 담홍색 (S7 p.469·497)
+	seongdol = { material = Enum.Material.Cobblestone, color = Color3.fromRGB(184, 174, 166) }, -- 체성 면석·단부
+	yeojangseok = { material = Enum.Material.Granite, color = Color3.fromRGB(178, 170, 162) }, -- 여장석·미석
+	okgaeseok = { material = Enum.Material.Granite, color = Color3.fromRGB(150, 145, 140) }, -- 여장 옥개석 (그늘져 보여 한 단 어둡게)
+	-- 광장·도로 (색은 S13 영상·사용자 항공 사진을 눈으로 참고)
+	masato = { material = Enum.Material.Sand, color = Color3.fromRGB(196, 176, 140) }, -- 흙(마사토) 마당
+	bakseok = { material = Enum.Material.Slate, color = Color3.fromRGB(168, 164, 156) }, -- 박석 광장
+	jandi = { material = Enum.Material.Grass, color = Color3.fromRGB(92, 120, 64) }, -- 잔디, 성곽 뒤 비탈
+	bodo = { material = Enum.Material.Pavement, color = Color3.fromRGB(150, 146, 140) }, -- 보도 포장
+	asphalt = { material = Enum.Material.Asphalt, color = Color3.fromRGB(58, 58, 60) }, -- 차도
+	ongbyeok = { material = Enum.Material.Granite, color = Color3.fromRGB(165, 160, 152) }, -- 광장 가장자리 석축 옹벽
+	hoengdan = { material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(230, 230, 226) }, -- 횡단보도 흰 줄
 }
 
 -- 부재 이름(Part.Name) → 칠. 없는 이름은 뇌록 (S7: 목부 일반이 뇌록 주바탕)
@@ -36,6 +48,8 @@ local byName: { [string]: string } = {
 	Stone = "myeonseok",
 	ParapetSouth = "jeondol", ParapetNorth = "jeondol", ParapetWest = "jeondol", ParapetEast = "jeondol",
 	PavilionBase = "gidan",
+	SeongBody = "seongdol", SeongBack = "jandi", Yeojang = "yeojangseok", Miseok = "yeojangseok", Okgae = "okgaeseok",
+	Masato = "masato", Bakseok = "bakseok", Jandi = "jandi", Bodo = "bodo", Asphalt = "asphalt", Ongbyeok = "ongbyeok", Hoengdan = "hoengdan",
 }
 
 local function of(name: string): Paint
