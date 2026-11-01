@@ -9,6 +9,7 @@ local K = require(ReplicatedStorage.Shared.Chukbu)
 local setup = require(script.Parent.Member)
 local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
 local Split = require(ReplicatedStorage.Shared.RoofSplit)
+local M = require(ReplicatedStorage.Shared.Meoricho)
 
 local s = Units.studs
 local L = D.level
@@ -38,7 +39,7 @@ return function()
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 
 	-- story: 지붕 분해 층 (고주·귀고주는 상층, Shared.RoofSplit 머리말)
-	local function part(story: RoofSplit.Story, name: string, cf: CFrame, size: Vector3, cylinder: boolean?)
+	local function part(story: RoofSplit.Story, name: string, cf: CFrame, size: Vector3, cylinder: boolean?): Part
 		local p = Instance.new("Part")
 		p.Name = name
 		setup(p, true) -- 기둥 등 축부는 지금처럼 부딪힌다
@@ -49,20 +50,78 @@ return function()
 			p.Shape = Enum.PartType.Cylinder
 		end
 		p.Parent = model
+		return p
 	end
 	-- 세로 원기둥: (x, z)에 y0~y1 (레벨)
 	local function column(story: RoofSplit.Story, name: string, x: number, z: number, y0: number, y1: number, dia: number)
 		part(story, name, CFrame.new(s(x), s((y(y0) + y(y1)) / 2), s(z)) * CFrame.Angles(0, 0, math.pi / 2), Vector3.new(y1 - y0, dia, dia), true)
 	end
 	-- 수평 부재: a→b (XZ 평면, m) 사이, 단면 w×h, 밑면 레벨 bottom. round면 지름 w 원형
-	local function beam(story: RoofSplit.Story, name: string, a: Vector2, b: Vector2, bottom: number, w: number, h: number, round: boolean?)
+	-- 긴 옆면: 상자는 Right·Left, 원통(축 = 로컬 X)은 Back·Front. 앞쪽 면에서 보면 a가 왼쪽이다
+	local function beam(story: RoofSplit.Story, name: string, a: Vector2, b: Vector2, bottom: number, w: number, h: number, round: boolean?): Part
 		local mid, len = (a + b) / 2, (b - a).Magnitude
 		local yc = s(y(bottom) + h / 2)
 		local cf = CFrame.lookAt(Vector3.new(s(mid.X), yc, s(mid.Y)), Vector3.new(s(b.X), yc, s(b.Y)))
 		if round then
-			part(story, name, cf * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(len, w, w), true)
-		else
-			part(story, name, cf, Vector3.new(w, h, len))
+			return part(story, name, cf * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(len, w, w), true)
+		end
+		return part(story, name, cf, Vector3.new(w, h, len))
+	end
+	local function decal(p: Part, round: boolean?, left: string, right: string)
+		for i, face in if round then { Enum.NormalId.Back, Enum.NormalId.Front } else { Enum.NormalId.Right, Enum.NormalId.Left } do
+			local d = Instance.new("Decal")
+			d.Name = "Meoricho"
+			d.Face = face
+			d.Texture = if i == 1 then left else right
+			d.Parent = p
+		end
+	end
+
+	-- 머리초 부재 (Shared.Meoricho, ADR 0009): a→b를 이웃한 기둥 자리 사이(칸)마다 [머리초 | 계풍 | 머리초]로 나눈다.
+	-- cols = 기둥 중심(이 줄 위로 투영해 쓴다), off = 기둥 중심에서 머리초가 시작하는 거리. 칸 밖 양끝(모서리)은 문양 없는 토막.
+	-- 머리초는 기둥 쪽에서 바깥으로 지어 앞쪽 면에 a 그림(기둥이 왼쪽), 뒤쪽 면에 b 그림(거울상)을 붙인다
+	local meorichoWarned = false
+	local function meoricho(story: RoofSplit.Story, name: string, a: Vector2, b: Vector2, bottom: number, w: number, h: number, round: boolean?,
+		motif: M.Motif, cols: { Vector2 }, off: number)
+		local len, u = (b - a).Magnitude, (b - a).Unit
+		local m = M.length * (if round then w else h) / motif.height
+		local at = function(t: number): Vector2
+			return a + u * t
+		end
+		local function piece(t0: number, t1: number): Part?
+			return if t1 - t0 > 0.01 then beam(story, name, at(t0), at(t1), bottom, w, h, round) else nil
+		end
+		local ts = {}
+		for _, c in cols do
+			table.insert(ts, (c - a):Dot(u))
+		end
+		table.sort(ts)
+		local images = motif.a ~= "" and motif.b ~= ""
+		if not images and not meorichoWarned then
+			meorichoWarned = true
+			warn("머리초: Shared.Meoricho 에셋 ID가 비어 있어 문양 없이 나눔 (textures/meoricho/*.png 업로드 필요)")
+		end
+		local first, last = len, 0
+		for i = 1, #ts - 1 do
+			local s0, s1 = math.max(ts[i] + off, 0), math.min(ts[i + 1] - off, len)
+			first, last = math.min(first, s0), math.max(last, s1)
+			local h0 = beam(story, name, at(s0), at(s0 + m), bottom, w, h, round)
+			local h1 = beam(story, name, at(s1), at(s1 - m), bottom, w, h, round)
+			local g = piece(s0 + m, s1 - m)
+			if images then
+				decal(h0, round, motif.a, motif.b)
+				decal(h1, round, motif.a, motif.b)
+				if g and motif.gyepung ~= "" then
+					decal(g, round, motif.gyepung, motif.gyepung)
+				end
+			end
+		end
+		-- 바깥 기둥 너머로 나간 끝만 토막을 둔다 (창방처럼 기둥 중심에서 끝나면 기둥 속이라 짓지 않는다)
+		if ts[1] > 0.01 then
+			piece(0, first)
+		end
+		if ts[#ts] < len - 0.01 then
+			piece(last, len)
 		end
 	end
 
@@ -70,6 +129,14 @@ return function()
 	local ux, uz = positions(D.upperBays), positions(D.upperSideBays)
 	local C = K.column
 	local lx, lz, px, pz = xs[#xs], zs[#zs], ux[#ux], uz[#uz]
+	-- 기둥 자리 (meoricho가 줄 위로 투영한다): 앞뒤 줄은 x, 양옆 줄은 z
+	local colsX, colsZ = {}, {}
+	for _, x in xs do
+		table.insert(colsX, Vector2.new(x, 0))
+	end
+	for _, z in zs do
+		table.insert(colsZ, Vector2.new(0, z))
+	end
 
 	-- 기둥: 하층 둘레 평주·우주, 가운데 줄 고주, 상층 모서리 귀고주, 상층 둘레 평주
 	for i, x in xs do
@@ -108,8 +175,10 @@ return function()
 
 	-- 창방: 기둥 사이, 윗면 = 기둥 상
 	local lc, uc = K.lowerChangbang, K.upperChangbang
+	-- 하층 창방: 머리초는 창방 옆면이 둥근 기둥에서 나오는 자리부터 (기둥 반지름, 창방 폭 절반으로 잰 현의 거리)
+	local lcOff = math.sqrt((C.lowerDia / 2) ^ 2 - (lc.width / 2) ^ 2)
 	ring(xs, zs, function(a, b)
-		beam("lower", "LowerChangbang", a, b, L.lowerColumnTop - lc.height, lc.width, lc.height)
+		meoricho("lower", "LowerChangbang", a, b, L.lowerColumnTop - lc.height, lc.width, lc.height, false, M.motifs.byeong, { a, b }, lcOff)
 	end)
 	ring(ux, uz, function(a, b)
 		beam("upper", "UpperChangbang", a, b, L.upperColumnTop - uc.height, uc.width, uc.height)
@@ -121,11 +190,19 @@ return function()
 		{ hx = lx, hz = lz, base = L.lowerColumnTop, story = "lower" },
 		{ hx = px, hz = pz, base = L.upperColumnTop, story = "upper" },
 	}
+	-- 하층 평방은 기둥 중심에서 머리초 둘이 뒷목끼리 맞닿게 나눈다 (상층은 아직 한 줄)
 	for _, r in pbRows do
 		local hx = r.hx + pb.width / 2
 		for _, sgn in { -1, 1 } do
-			beam(r.story, "Pyeongbang", Vector2.new(-hx, sgn * r.hz), Vector2.new(hx, sgn * r.hz), r.base, pb.width, pb.height)
-			beam(r.story, "Pyeongbang", Vector2.new(sgn * r.hx, -r.hz + pb.width / 2), Vector2.new(sgn * r.hx, r.hz - pb.width / 2), r.base, pb.width, pb.height)
+			local a1, b1 = Vector2.new(-hx, sgn * r.hz), Vector2.new(hx, sgn * r.hz)
+			local a2, b2 = Vector2.new(sgn * r.hx, -r.hz + pb.width / 2), Vector2.new(sgn * r.hx, r.hz - pb.width / 2)
+			if r.story == "lower" then
+				meoricho("lower", "Pyeongbang", a1, b1, r.base, pb.width, pb.height, false, M.motifs.juhwa, colsX, 0)
+				meoricho("lower", "Pyeongbang", a2, b2, r.base, pb.width, pb.height, false, M.motifs.juhwa, colsZ, 0)
+			else
+				beam(r.story, "Pyeongbang", a1, b1, r.base, pb.width, pb.height)
+				beam(r.story, "Pyeongbang", a2, b2, r.base, pb.width, pb.height)
+			end
 		end
 	end
 
@@ -166,7 +243,8 @@ return function()
 	end
 	rect(lx + od.outset, lz + od.outset, function(a, b)
 		local d = (b - a).Unit * od.dia / 2 -- 모서리에서 지름 절반 더 내밀어 왕지처럼 겹치게
-		beam("lower", "LowerOuterDori", a - d, b + d, doriBottom, od.dia, od.dia, true)
+		-- 머리초: 기둥 자리 사이 칸마다. ponytail: 모서리 왕지 토막은 문양 없음 (S7 연화머리초는 아직)
+		meoricho("lower", "LowerOuterDori", a - d, b + d, doriBottom, od.dia, od.dia, true, M.motifs.byeong, if a.Y == b.Y then colsX else colsZ, 0)
 		beam("lower", "LowerOuterJangyeo", a, b, doriBottom - oj.height, oj.width, oj.height)
 	end)
 	rect(lx - id.inset, lz - id.inset, function(a, b)
