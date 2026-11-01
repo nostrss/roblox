@@ -22,7 +22,7 @@ export type Box = {
 
 -- 열쇠 자리: at초에 (x, z) m(건물 축). 다음 열쇠까지 pose 자세로 걷거나 서 있는다.
 -- face = 바라보는 쪽(rad, 0 = 정면 +Z). 없으면 걷는 쪽을 보고, 서 있으면 앞서 보던 쪽 그대로
-export type Key = { at: number, x: number, z: number, pose: string?, face: number? }
+export type Key = { at: number, x: number, z: number, pose: string?, face: number?, silent: boolean? } -- silent: 이 구간 이동은 걷기로 치지 않는다 (발소리 없음)
 
 export type Figure = {
 	boxes: { Box },
@@ -76,7 +76,7 @@ end
 
 type Seg = {
 	at: number, t1: number, x: number, z: number, nx: number, nz: number,
-	len: number, s0: number, yaw: number, prevYaw: number, pose: Pose, prevPose: Pose, moving: boolean, prevMoving: boolean, nextMoving: boolean,
+	silent: boolean?, len: number, s0: number, yaw: number, prevYaw: number, pose: Pose, prevPose: Pose, moving: boolean, prevMoving: boolean, nextMoving: boolean,
 }
 
 local function angleLerp(a: number, b: number, k: number): number
@@ -103,6 +103,7 @@ local function segments(figure: Figure): { Seg }
 		assert(not n or n.at >= k.at, "열쇠 시각이 거꾸로다")
 		local seg: Seg = {
 			at = k.at, t1 = if n then n.at else math.huge, x = k.x, z = k.z, nx = nx, nz = nz,
+			silent = k.silent,
 			len = len, s0 = s, yaw = target, prevYaw = yaw, pose = pose, prevPose = prevPose,
 			moving = moving, prevMoving = prevMoving, nextMoving = false,
 		}
@@ -164,6 +165,7 @@ do -- 검산: 걷는 중간과 끝, 도중 접속한 시각의 자리
 	assert(a.x == 5 and not a.still and math.abs(a.yaw - math.pi / 2) < 1e-6, "걷는 중 자리·방향이 틀렸다")
 	assert(b.x == 10 and b.still, "멈춘 자리가 틀렸다")
 	assert(c.x == 10 and c.still and c.gait == 0 and c.yaw == 0, "끝난 뒤 자리가 틀렸다")
+	assert(a.gait > 0 and b.gait == 0 and c.gait == 0, "걷는 중 판단이 틀렸다")
 end
 
 local function makePart(name: string, box: Box, parent: Instance): BasePart
@@ -196,8 +198,8 @@ local PIVOTS = {
 	upper = pivot(0, HIP.y),
 }
 
--- 클라이언트에서 한 번 부른다. 돌려주는 set(t)이 인물을 그 시각 자리에 놓는다. 회차 밖은 math.huge
-function Figures.start(config: Config): (t: number) -> ()
+-- 클라이언트에서 한 번 부른다. 돌려주는 set(t)이 인물을 그 시각 자리에 놓고, 지금 걷는 인물들의 가운데 세계 좌표를 돌려준다 (아무도 안 걸으면 nil). 회차 밖은 math.huge
+function Figures.start(config: Config): (t: number) -> Vector3?
 	assert(RunService:IsClient(), "인물은 클라이언트에서만 만든다")
 	local folder = Instance.new("Folder")
 	folder.Name = "Figures"
@@ -268,6 +270,7 @@ function Figures.start(config: Config): (t: number) -> ()
 	local function set(t: number)
 		table.clear(moveParts)
 		table.clear(moveCFrames)
+		local walkSum, walkers = Vector3.zero, 0
 		for _, l in live do
 			local visible = l.figure.duty == true or (t >= l.first and t <= l.last)
 			if visible ~= l.shown then
@@ -286,6 +289,10 @@ function Figures.start(config: Config): (t: number) -> ()
 					end
 				end
 				local st = stateAt(l.segs, t)
+				if st.gait > 0 and not st.seg.silent then
+					walkSum += config.site:PointToWorldSpace(Vector3.new(st.x, config.ground(st.x, st.z), st.z) * S)
+					walkers += 1
+				end
 				-- 멈춰 있어도 구간이 바뀌었으면 놓는다 (도중 접속은 멈춘 자세에서 멈춘 자세로 건너뛴다)
 				if not st.still or l.restingOn ~= st.seg then
 					place(l, st)
@@ -296,6 +303,7 @@ function Figures.start(config: Config): (t: number) -> ()
 		if #moveParts > 0 then
 			workspace:BulkMoveTo(moveParts, moveCFrames, Enum.BulkMoveMode.FireCFrameChanged)
 		end
+		return if walkers > 0 then walkSum / walkers else nil
 	end
 	set(math.huge)
 	return set
