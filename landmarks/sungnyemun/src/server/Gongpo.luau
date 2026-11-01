@@ -185,7 +185,7 @@ return function()
 	end
 	local folder = CollectionService:GetTagged(Tags.MEMBER_MESHES)[1]
 	if not folder then
-		warn("공포: MemberMeshes 태그 Folder가 없어 건너뜀 (places/sungnyemun/meshes/*.obj 업로드 필요)")
+		warn("공포: MemberMeshes 태그 Folder가 없어 건너뜀 (landmarks/sungnyemun/meshes/*.obj 업로드 필요)")
 		return
 	end
 	meshes = folder

@@ -4,9 +4,9 @@
 --   luau tools/jibung_obj.luau | awk '/^#FILE /{f=$2; next} {print > f}'
 -- 메시 4개(하층·상층 × 앞면·옆면). 뒷면·반대 옆면은 서버가 같은 메시를 180° 돌려 쓴다.
 -- 좌표: 앞면 = 남(+Z) 면, 옆면 = 동(+X) 면. 단위 m로 만들고 OBJ는 스터드.
-local J = require("../places/sungnyemun/src/shared/Jibung")
-local C = require("../places/sungnyemun/src/shared/Cheoma")
-local D = require("../places/sungnyemun/src/shared/Dimensions")
+local J = require("../landmarks/sungnyemun/src/shared/Jibung")
+local C = require("../landmarks/sungnyemun/src/shared/Cheoma")
+local D = require("../landmarks/sungnyemun/src/shared/Dimensions")
 
 local STUD = 0.34 -- core/Units.luau METERS_PER_STUD 와 같아야 한다
 
@@ -273,7 +273,7 @@ for _, e in out do
 		table.insert(meta, `\t\t{key} = \{ {table.concat(pts, ", ")} \},`)
 	end
 	table.insert(meta, "\t},")
-	print("#FILE places/sungnyemun/meshes/" .. e.name .. ".obj")
+	print("#FILE landmarks/sungnyemun/meshes/" .. e.name .. ".obj")
 	print("# " .. e.name .. " — tools/jibung_obj.luau 로 생성. 손으로 고치지 말 것")
 	for _, v in m.verts do
 		-- Studio 3D Importer의 Y축 180° 뒤집힘 상쇄 (gongpo_obj.luau 와 같음)
@@ -284,7 +284,7 @@ for _, e in out do
 	end
 end
 
-print("#FILE places/sungnyemun/src/shared/JibungMeshes.luau")
+print("#FILE landmarks/sungnyemun/src/shared/JibungMeshes.luau")
 print("--!strict")
 print("-- tools/jibung_obj.luau 로 생성. 손으로 고치지 말 것")
 print("-- 지붕 메시 경계 상자 (m, 레벨 기준). 앞면 = 남, 옆면 = 동. tris = 삼각형 수, gol = 처마 끝 기와골(수키와) 수")

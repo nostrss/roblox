@@ -1,4 +1,4 @@
-# 가상답사 (Roblox)
+# 랜드마크 시리즈 (Roblox)
 
 사찰·건축물·랜드마크를 실측 비율로 재현해 "답사하듯" 걷는 공간. 쇼케이스 이상, 게임 미만.
 기획 메모: https://claude.ai/artifact/NbrSpp5L8zZ1pjh85ezd4R
@@ -26,20 +26,20 @@
 CONTEXT.md            용어집
 docs/adr/             결정 기록 (ADR)
 core/                 모든 Place 공유 Luau (ReplicatedStorage.Core)
-places/<이름>/        Place 하나 = Rojo 프로젝트 하나
+landmarks/<이름>/     Place 하나 = Rojo 프로젝트 하나
   default.project.json  core를 "../../core"로 매핑
   src/{server,client,shared}  이 Place 전용 코드
   SOURCES.md          이 장소에 쓴 자료 목록 (아래 "자료 출처")
 ```
 
 - 랜드마크 하나 = **데이터 + Studio 배치**. 동작은 core가 하고, Place는 core에 데이터를 넘겨 부르기만 한다.
-- 두 번째 Place가 같은 코드를 원하는 순간 그 코드는 core로 올린다. core는 places를 참조하지 않는다.
+- 두 번째 Place가 같은 코드를 원하는 순간 그 코드는 core로 올린다. core는 landmarks를 참조하지 않는다.
 - Place 이름은 로마자 소문자 한 단어(`sungnyemun`, `bulguksa`). 폴더명·pm2 이름(`roblox-<이름>`)·Rojo `name`을 같게 맞춘다.
 - 맵·모델(.rbxl)은 git에 없음 → Studio "Save to Roblox"로 보관.
 
 ## 새 Place 추가
 
-1. `places/sungnyemun/` 를 복사해 `places/<이름>/` 생성, `default.project.json`의 `name` 변경, `src/` 비우기
+1. `landmarks/sungnyemun/` 를 복사해 `landmarks/<이름>/` 생성, `default.project.json`의 `name` 변경, `src/` 비우기
 2. `~/github/ecosystem.config.js`에 pm2 항목 추가, 포트는 34872부터 하나씩 증가 (`args: 'serve --port 3487x'`)
 3. pm2는 `~/github`에서 실행 (cwd가 상대 경로)
 4. `SOURCES.md` 생성

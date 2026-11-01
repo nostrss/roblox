@@ -1,9 +1,7 @@
-# 가상답사 (Roblox)
+# Roblox 작업 모음
 
-사찰·건축물·랜드마크를 실측 비율로 로블록스에 재현해, 답사하듯 걸어보는 공간을 만든다.
-첫 번째 랜드마크는 숭례문.
+여러 장르의 Roblox 작업을 담는 모노레포. 지금은 [랜드마크 시리즈](landmarks/)(`landmarks/`)만 있고, 게임 등 다른 장르는 앞으로 장르별 폴더(예: `games/`)로 들어간다.
 
-- 기획: [기획 메모](https://claude.ai/artifact/NbrSpp5L8zZ1pjh85ezd4R)
 - 용어: [CONTEXT.md](CONTEXT.md) — 대화·코드·문서에서 이 용어를 쓴다
 - 규칙: [CLAUDE.md](CLAUDE.md) — 구조, 단위·좌표, 코드, 해설, 자료 출처, Git 규칙
 - 결정 기록: [docs/adr/](docs/adr/)
@@ -11,12 +9,11 @@
 ## 구조
 
 ```
-core/            모든 Place가 공유하는 Luau 코드 (Studio에서 ReplicatedStorage.Core)
-places/<이름>/   랜드마크 하나 = Place 하나 = Rojo 프로젝트 하나
-docs/adr/        결정 기록
+core/                공통 Luau 코드 (Studio에서 ReplicatedStorage.Core). 지금은 랜드마크 시리즈가 쓰는 공통 코드
+landmarks/<이름>/    랜드마크 시리즈. 랜드마크 하나 = Place 하나 = Rojo 프로젝트 하나
+tools/               메시 굽기·도면 추출 보조 스크립트
+docs/adr/            결정 기록
 ```
-
-하나의 Experience 안에 랜드마크마다 Place를 둔다. 자세한 규칙은 CLAUDE.md.
 
 ## 준비물
 
@@ -30,11 +27,11 @@ docs/adr/        결정 기록
 1. 저장소를 클론한다.
 2. 작업할 Place 폴더에서 Rojo 서버를 띄운다.
    ```sh
-   cd places/sungnyemun
+   cd landmarks/sungnyemun
    rojo serve            # 기본 포트 34872
    ```
 3. Studio에서 해당 Place를 열고 **Plugins → Rojo → Connect**.
-4. 이제 `core/`, `places/<이름>/src/`의 `.luau` 파일을 고치면 Studio에 실시간 반영된다.
+4. 이제 `core/`, `landmarks/<이름>/src/`의 `.luau` 파일을 고치면 Studio에 실시간 반영된다.
 
 ### 코드와 Studio 작업의 차이
 

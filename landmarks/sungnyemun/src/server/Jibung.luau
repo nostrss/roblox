@@ -204,7 +204,7 @@ return function()
 	for name, b in M :: { [string]: any } do
 		local src = folder and folder:FindFirstChild(name)
 		if not (src and src:IsA("MeshPart")) then
-			warn(`지붕: MemberMeshes에 {name}이 없어 건너뜀 (places/sungnyemun/meshes/{name}.obj 업로드 필요)`)
+			warn(`지붕: MemberMeshes에 {name}이 없어 건너뜀 (landmarks/sungnyemun/meshes/{name}.obj 업로드 필요)`)
 			continue
 		end
 		local cf = CFrame.new(Vector3.new(b.center[1], b.center[2] - D.level.ground, b.center[3]) * S)

@@ -328,11 +328,11 @@ return function()
 	local src = folder and folder:FindFirstChild("Buyeon")
 	for _, name in { "Chunyeo", "UpperChunyeo", "Sarae", "Galmo" } do
 		if not (folder and folder:FindFirstChild(name)) then
-			warn(`처마: MemberMeshes에 {name}이 없어 건너뜀 (places/sungnyemun/meshes/{name}.obj 업로드 필요)`)
+			warn(`처마: MemberMeshes에 {name}이 없어 건너뜀 (landmarks/sungnyemun/meshes/{name}.obj 업로드 필요)`)
 		end
 	end
 	if not (src and src:IsA("MeshPart")) then
-		warn("처마: MemberMeshes에 Buyeon이 없어 부연은 건너뜀 (places/sungnyemun/meshes/Buyeon.obj 업로드 필요)")
+		warn("처마: MemberMeshes에 Buyeon이 없어 부연은 건너뜀 (landmarks/sungnyemun/meshes/Buyeon.obj 업로드 필요)")
 		src = nil
 	end
 	local L = D.level

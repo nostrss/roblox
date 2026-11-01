@@ -2,7 +2,7 @@
 -- 공포(하층·상층, 주간포·주상포·귀포)의 부재 치수. 단위 m, 출처 ID는 SOURCES.md.
 -- 기준: 원점 = 주두 밑면 중심(S4의 SP), +Y 위, +Z 바깥(쇠서 쪽), +X 벽 방향.
 -- 형태·위치: S4 144~149 하층·상층 공포(1/30 도면을 mm로 환산해 읽음). 부재 구성·짜임 순서: S3 p.255, 제공·첨차 실측: S3 p.262~286.
--- 메시는 tools/gongpo_obj.luau 로 구워 Studio에 올린다(places/sungnyemun/meshes).
+-- 메시는 tools/gongpo_obj.luau 로 구워 Studio에 올린다(landmarks/sungnyemun/meshes).
 -- ponytail: 갈(소로 윗면 홈)·첨차 윗면 굴림·쇠서 초각 장식은 뺐다. 가까이서 보여야 하면 프로파일 점을 늘린다.
 
 export type Profile = { { number } } -- { u, v } 꼭짓점 목록. 첨차는 u = X, 제공은 u = Z(바깥 +)
