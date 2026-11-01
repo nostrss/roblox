@@ -21,6 +21,7 @@ export type Box = {
 	shadow: boolean?,
 	mesh: number?, -- 메시 에셋 ID. 있으면 상자 대신 이 메시로 짓는다 (serveMeshes가 서버에서 미리 받아 둔다)
 	texture: number?, -- 메시 그림 에셋 ID
+	tint: boolean?, -- 그림을 빼고 color로 칠한다 (같은 메시를 다른 색으로 쓸 때)
 }
 
 -- 열쇠 자리: at초에 (x, z) m(건물 축). 다음 열쇠까지 pose 자세로 걷거나 서 있는다.
@@ -201,6 +202,11 @@ local function makePart(name: string, box: Box, parent: Instance): BasePart
 		block.TopSurface = Enum.SurfaceType.Smooth
 		block.BottomSurface = Enum.SurfaceType.Smooth
 		p = block
+	end
+	if box.tint and p:IsA("MeshPart") then
+		p.TextureID = ""
+		p.Color = box.color
+		p.Material = box.material or Enum.Material.Fabric
 	end
 	p.Name = name
 	p.Anchored = true

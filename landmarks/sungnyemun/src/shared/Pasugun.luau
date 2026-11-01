@@ -44,7 +44,6 @@ local M = {
 	jeollip = { 126342459365549, 116313543625603, 180 },
 	samo = { 111329661539451, 138499598635680, 180 },
 	hwangnip = { 113461766938981, 113968085371673, 180 },
-	tallHat = { 95826553741572, 95695938878583, 180 },
 	vestYellow = { 96192919519974, 121443490045288, 180 },
 	vestRed = { 96087331470781, 95097345748557, 180 },
 	robeHogun = { 98887586067697, 104207938350278, 180 },
@@ -96,19 +95,33 @@ local function body(d: Dress): { Figures.Box }
 	return b
 end
 
-local JEOLLIP = mesh("upper", M.jeollip, 0.56, 0.25, 0.56, 0, 1.78, 0)
+-- 모자는 이마까지 내려 씌운다: 챙 밑면 = BRIM, 몸통이 머리 윗부분(머리 메시 꼭대기 1.71 m)을 덮는다.
+-- 메시를 옆으로 넓혀 몸통 반지름이 머리 반폭(약 0.12 m)보다 크게 한다. 비율은 메시 꼭짓점을 재서 정했다 (몸통 반지름 / 폭: 전립 0.25, 황립 0.24, 사모 0.21)
+local BRIM = 1.615
+local function hatMesh(m: { number }, width: number, height: number): Figures.Box
+	return mesh("upper", m, width, height, width, 0, BRIM + height / 2, 0)
+end
+local JEOLLIP = hatMesh(M.jeollip, 0.54, 0.24)
 -- 전립의 상모와 패영 (sa03): 메시에 없는 부분을 얹는다
 local function jeollipTrim(b: { Figures.Box })
 	local red, amber = hex("#C8142E"), hex("#B5622A")
 	local function ball(d: number, x: number, y: number, z: number, color: Color3): Figures.Box
 		return { joint = "upper", size = Vector3.new(d, d, d), at = CFrame.new(x, y, z), color = color, shape = Enum.PartType.Ball, material = METAL }
 	end
-	table.insert(b, rod("upper", 0.26, 0.05, 0.2, 1.52, -0.05, red)) -- 상모 술
-	table.insert(b, ball(0.06, 0.2, 1.66, -0.05, red))
+	-- 상모: 챙 뒤쪽 밑에서 늘어진 가는 술 (뒤로 보내 얼굴 옆 막대처럼 보이지 않게)
+	table.insert(b, rod("upper", 0.2, 0.032, 0.15, 1.5, -0.1, red))
+	table.insert(b, ball(0.045, 0.15, 1.6, -0.1, red))
+	-- 패영: 챙 밑 귀 옆에서 턱 아래를 지나 가슴 앞으로 모이는 끈 + 구슬. 끈이 있어 구슬이 떠 보이지 않는다
 	for side = -1, 1, 2 do
-		for i = 0, 5 do
-			local k = i / 5
-			table.insert(b, ball(0.028, side * (0.14 - 0.08 * k), 1.6 - 0.32 * k, 0.04 + 0.1 * k, amber))
+		local top, low = Vector3.new(side * 0.13, 1.61, 0.01), Vector3.new(side * 0.035, 1.3, 0.135)
+		table.insert(b, {
+			joint = "upper", size = Vector3.new((low - top).Magnitude, 0.01, 0.01),
+			at = CFrame.lookAt((top + low) / 2, low) * CFrame.Angles(0, math.pi / 2, 0),
+			color = amber, shape = Enum.PartType.Cylinder, material = METAL,
+		})
+		for i = 1, 6 do
+			local at = top:Lerp(low, i / 6)
+			table.insert(b, ball(0.024, at.X, at.Y, at.Z, amber))
 		end
 	end
 end
@@ -129,15 +142,18 @@ local function jeongbyeong(torso: { number }, spear: boolean): { Figures.Box } -
 	return b
 end
 
+-- 갓: 황립 메시를 검게 칠해 쓴다. 전용 메시는 챙 아래로 기둥이 뻗고 몸통이 좁아 머리에 맞지 않았다
+local gat = hatMesh(M.hwangnip, 0.5, 0.21)
+gat.tint, gat.color = true, C.black
 local function geumrugwan(): { Figures.Box } -- 금루관 후보 (sp03·sp07, 역할 추정)
-	local b = body({ torso = M.robeGeumru, arm = M.armTeal, hat = mesh("upper", M.tallHat, 0.3, 0.26, 0.3, 0, 1.77, 0), torsoHeight = 1.22, torsoDepth = 0.4 })
+	local b = body({ torso = M.robeGeumru, arm = M.armTeal, hat = gat, torsoHeight = 1.22, torsoDepth = 0.4 })
 	table.insert(b, { joint = "armL", size = Vector3.new(0.03, 0.36, 0.36), at = CFrame.new(0.3, 0.72, 0.16) * CFrame.Angles(0, 0, math.pi / 2), color = hex("#8C7A3C"), shape = CYL, material = METAL }) -- 징
 	table.insert(b, rod("armR", 0.34, 0.03, -0.3, 0.68, 0.06, hex("#5A2E22"))) -- 징채
 	return b
 end
 
 local function seonjeongwan(): { Figures.Box } -- 선전관 후보 (sp03, 역할 추정)
-	local b = body({ torso = M.robeSeonjeon, arm = M.armBlue, hat = mesh("upper", M.samo, 0.46, 0.18, 0.46, 0, 1.76, 0), torsoHeight = 1.25, torsoDepth = 0.3 })
+	local b = body({ torso = M.robeSeonjeon, arm = M.armBlue, hat = hatMesh(M.samo, 0.62, 0.23), torsoHeight = 1.25, torsoDepth = 0.3 })
 	table.insert(b, box("armR", 0.1, 0.16, 0.02, -0.28, 0.66, 0.09, hex("#5A2E22"))) -- 표신 (모양은 근사)
 	return b
 end
@@ -148,7 +164,7 @@ local function geumgun(): { Figures.Box } -- 금군: 복식 어긋남은 머리 
 end
 
 local function player(instrument: { Figures.Box }): { Figures.Box } -- 나각수·나발수 후보 (mh22 도열, 악기 배정 추정)
-	local b = body({ torso = M.robePlayer, arm = M.armYellow, hat = mesh("upper", M.hwangnip, 0.52, 0.2, 0.52, 0, 1.76, 0), torsoHeight = 1.22, torsoDepth = 0.4 })
+	local b = body({ torso = M.robePlayer, arm = M.armYellow, hat = hatMesh(M.hwangnip, 0.56, 0.2), torsoHeight = 1.22, torsoDepth = 0.4 })
 	for _, i in instrument do
 		table.insert(b, i)
 	end
