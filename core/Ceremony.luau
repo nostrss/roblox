@@ -13,8 +13,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 
+local Figures = require(script.Parent.Figures)
 local Split = require(script.Parent.Split)
 local Tags = require(script.Parent.Tags)
+local Units = require(script.Parent.Units)
 local text = require(script.Parent.I18n).text
 
 export type Phase = {
@@ -31,6 +33,8 @@ export type Config = {
 	blockFrom: number, -- 문 닫힘 정도(0 열림 ~ 1 닫힘)가 이 값 이상이면 막이를 켠다
 	button: string, -- 시작 버튼 다국어 키
 	buttonBusy: string, -- 진행 중 버튼 다국어 키
+	figures: Figures.Config?, -- 회차를 따라 움직이는 인물과 기물 (core Figures)
+	footsteps: { sound: string, rolloff: { number } }?, -- 인물이 걷는 동안 걷는 무리 가운데에서 도는 발소리 하나. sound = sounds 키, rolloff = { 최소, 최대 } 거리(m)
 }
 
 local REMOTE = "Ceremony"
@@ -92,6 +96,7 @@ local function validate(config: Config)
 			assert(config.sounds[s.sound], `없는 소리 키: {s.sound}`)
 		end
 	end
+	assert(not config.footsteps or config.sounds[config.footsteps.sound], "없는 발소리 키")
 end
 
 local function occupied(barrier: BasePart): boolean
@@ -293,6 +298,38 @@ function Ceremony.start(config: Config)
 		end)
 	end
 
+	local setFigures = if config.figures then Figures.start(config.figures) else nil
+
+	-- 발소리: 인물마다 붙이지 않고 소리원 하나를 걷는 무리 가운데로 옮긴다. 켜고 끄기는 매 프레임 t에서 나온 값으로만 정한다
+	local stepSource = config.footsteps and originals[config.footsteps.sound]
+	local stepEmitter: Attachment? = nil
+	local stepSound: Sound? = nil
+	if config.footsteps and stepSource then
+		local a = Instance.new("Attachment") -- Ambience와 같은 파트 없는 3D 소리 자리
+		a.Name = "Ceremony_Footsteps"
+		a.Parent = workspace.Terrain
+		local s = stepSource:Clone()
+		s.Name = "Ceremony_Footsteps"
+		s.Looped = true
+		s.RollOffMode = Enum.RollOffMode.InverseTapered
+		s.RollOffMinDistance = Units.studs(config.footsteps.rolloff[1])
+		s.RollOffMaxDistance = Units.studs(config.footsteps.rolloff[2])
+		s.Parent = a
+		stepEmitter, stepSound = a, s
+	end
+	local function footsteps(at: Vector3?)
+		if stepEmitter and stepSound then
+			if at and stepSound.Playing then
+				stepEmitter.WorldPosition = stepEmitter.WorldPosition:Lerp(at, 0.1) -- 무리 가운데가 튀어도 소리가 튀지 않게
+			elseif at then
+				stepEmitter.WorldPosition = at
+			end
+			if (at ~= nil) ~= stepSound.Playing then
+				stepSound.Playing = at ~= nil
+			end
+		end
+	end
+
 	task.spawn(function() -- 서버가 건물을 다 지은 뒤에 만들므로 기다리는 동안 다른 클라이언트 준비를 막지 않게
 		local remote = ReplicatedStorage:WaitForChild(REMOTE) :: RemoteEvent
 		local running = false
@@ -325,6 +362,9 @@ function Ceremony.start(config: Config)
 				for _, p in CollectionService:GetTagged(Tags.GATE_LEAF) do
 					swing(p :: BasePart, closed)
 				end
+				if setFigures then
+					footsteps(setFigures(t))
+				end
 			end
 			if now ~= running then
 				running = now
@@ -332,6 +372,9 @@ function Ceremony.start(config: Config)
 				if not now then
 					for _, p in CollectionService:GetTagged(Tags.GATE_LEAF) do
 						swing(p :: BasePart, 0)
+					end
+					if setFigures then
+						footsteps(setFigures(math.huge))
 					end
 				end
 			end

@@ -148,8 +148,11 @@ return function()
 	for _, s in SPOTS do
 		-- 기구 앞면(Front, −Z)이 비추는 점을 본다
 		local at = s[1] :: Vector3
-		part("TugwangdeungPost", Vector3.new(0.1, LIFT, 0.1), CFrame.new((at - Vector3.new(0, LIFT / 2, 0)) * S), dark) -- 기구를 받치는 짧은 기둥
+		local post = part("TugwangdeungPost", Vector3.new(0.1, LIFT, 0.1), CFrame.new((at - Vector3.new(0, LIFT / 2, 0)) * S), dark) -- 기구를 받치는 짧은 기둥
 		local p = part("Tugwangdeung", Vector3.new(0.4, 0.25, 0.3), CFrame.lookAt(at * S, (s[2] :: Vector3) * S), dark)
+		if s[4] then -- 광장 바닥 등: 실제는 바닥에 묻혀 있다 (S41). 띄운 광원 자리는 그대로 두고 기구만 숨긴다 (파수군 앞을 가렸다)
+			post.Transparency, p.Transparency = 1, 1
+		end
 		local light = Instance.new("SpotLight")
 		light.Face = Enum.NormalId.Front
 		light.Color = WARM
