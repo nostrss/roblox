@@ -3,7 +3,7 @@
 -- 클라이언트 전용. 서버는 Lighting 시각·효과를 건드리지 않는다 (서버 값이 복제되면 방문자의 선택을 덮어쓴다).
 -- 시각은 서버 시계(GetServerTimeNow)로 잰다 — 방문자 기기 시계가 틀려도 모두 같은 서울 시각을 본다.
 -- 색조는 버튼이 아니라 해 높이로 정한다 → "지금"이 실제 노을 무렵이면 노을 색조가 된다.
---   낮 색조 = Studio에 둔 Lighting·효과 값 그대로(시작할 때 읽는다). 노을·밤 색조는 Place가 넘긴다. Ambient는 건드리지 않는다.
+--   낮 색조 = Studio에 둔 Lighting·효과 값(시작할 때 읽는다)에 Place의 day를 덮은 값. 노을·밤 색조는 Place가 넘긴다.
 -- 야간 조명은 Tags.NIGHT_LIGHT로 찾는다 (Studio에서 더하거나 옮긴 것도 태그만 붙이면 같이 켜고 끈다). Tags.DAY_LIGHT는 그 반대로 켜고 끈다.
 local CollectionService = game:GetService("CollectionService")
 local ContentProvider = game:GetService("ContentProvider")

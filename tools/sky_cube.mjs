@@ -181,6 +181,14 @@ function ridge(az) {
   const n = fbm(Math.cos(a) * 9 + 31, Math.sin(a) * 9 + 17, 2.5, 5);
   return h * (0.82 + n * 0.36) + (n - 0.5) * 0.5;
 }
+// 먼 도시 스카이라인: 방위 칸마다 건물 하나. 그래픽 품질이 낮아 먼 건물을 그리지 않는 기기에서도 지평선이 도시로 보인다 (모바일)
+const CITY_CELL = 0.9; // 칸 하나 방위각(도)
+function skyline(az) {
+  const i = Math.floor(az / CITY_CELL);
+  const h1 = PERM[i & 255] / 255, h2 = PERM[(i * 7 + 3) & 255] / 255;
+  const tall = h2 > 0.82 ? 2.2 : 1;
+  return (0.7 + h1 * 2.2) * tall;
+}
 function mountains(col, d, P) {
   const elev = (Math.asin(clamp(d[1], -1, 1)) * 180) / Math.PI;
   if (elev < -0.5 || elev > 18) return col;
@@ -205,6 +213,19 @@ function mountains(col, d, P) {
       }
     }
     out = mix3(col, c, cover);
+  }
+  // 도시: 산 앞. 높은 건물일수록 진하다 (대기 원근), 밤에는 창 불빛 점
+  const B = skyline(az);
+  if (elev < B) {
+    const c = mix3(M.low, M.high, 0.35 + (B / 6) * 0.65);
+    if (P.cityGlow) {
+      const lit = noise(az * 22, elev * 26, 4.5);
+      if (lit > 0.66) {
+        const s = (lit - 0.66) * 2.4;
+        c[0] += s, c[1] += s * 0.8, c[2] += s * 0.55;
+      }
+    }
+    out = c;
   }
   // N서울타워: 남산 정상의 기둥, 전망대 원반, 안테나
   const da = ((az - TOWER_AZ + 540) % 360) - 180;
@@ -275,11 +296,11 @@ function shade(d, P) {
       ];
     }
   }
-  // 지평선 아래는 건물·땅 뒤라 잘 안 보인다: 지평선 색이 서서히 어두워진다
+  // 지평선 아래: 먼 건물을 그리지 않는 기기에서는 땅 끝 너머가 보인다. 밝은 하늘색 대신 도시 색으로 바로 어둡게 깐다
   if (d[1] < 0) {
-    const k = smooth(0, -0.25, d[1]);
-    const h = skyColor([d[0], 0, d[2]], P);
-    col = mix3(h, [h[0] * 0.25, h[1] * 0.25, h[2] * 0.25], k);
+    const k = smooth(0, -0.2, d[1]);
+    const low = P.mountain.low;
+    col = mix3(low, [low[0] * 0.35, low[1] * 0.35, low[2] * 0.35], k);
   }
   return mountains(col, d, P);
 }

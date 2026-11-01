@@ -188,10 +188,10 @@ return function()
 			end
 		end
 		-- 길 조명
-		for k, lz in P.lightZ do
+		for _, lz in P.lightZ do
 			local x = sx * (P.edge + 0.05)
 			if Plaza.onFloor(x, lz, 0.2) then
-				bollard(x, lz, Plaza.floor(lz), k % 2 == 1)
+				bollard(x, lz, Plaza.floor(lz), true) -- 저녁에 흙 마당 가운데가 어둡지 않게 모두 켠다
 			end
 		end
 	end
