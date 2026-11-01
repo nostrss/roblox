@@ -7,6 +7,8 @@ return {
 	-- Light는 Brightness를, Neon 파트는 Transparency를 바꾼다. Studio에 둔 값이 "켜진" 상태 = 밤의 밝기다.
 	-- 조명 하나(Light)·기구 파트·묶은 Model 어디에 붙여도 된다.
 	NIGHT_LIGHT = "NightLight",
+	-- 낮 조명: 야간 조명과 반대로 켜고 끈다. 해가 들지 않는 곳을 낮에 밝히는 빛. 값·붙이는 자리는 NIGHT_LIGHT와 같다
+	DAY_LIGHT = "DayLight",
 	-- 분해 표식(core Split, 클라이언트): 다가가 누르면 내 화면에서만 겹별로 떠오른다. Part 하나에 붙인다. 태그가 어느 분해인지 정한다
 	ROOF_SPLIT_MARKER = "RoofSplitMarker", -- 지붕 분해 (core RoofSplit: 문루가 Attribute 겹·층별로)
 	MODEL_SPLIT_MARKER = "ModelSplitMarker", -- 모형 분해: 붙인 전시대와 같은 Model 안 부재가 밑면 높이 겹별로 (Place 데이터 collect)
