@@ -14,6 +14,8 @@ local K = require(ReplicatedStorage.Shared.Chukbu)
 local C = require(ReplicatedStorage.Shared.Cheoma)
 local G = require(ReplicatedStorage.Shared.Gongpo)
 local setup = require(script.Parent.Member)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
 
 local S = Units.studs(1)
 
@@ -338,6 +340,7 @@ return function()
 	local L = D.level
 	local root = Instance.new("Model")
 	root.Name = "Cheoma"
+	root.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 	local count = { jangyeon = 0, danyeon = 0, buyeon = 0, seonja = { Lower = 0, Upper = 0 } }
 
 	-- 층마다 { 데이터, 앞뒤 기둥열 반폭, 양옆 기둥열 반폭, 안쪽 받침(inset, 윗면), 외목도리(outset, 윗면) }
@@ -408,6 +411,7 @@ return function()
 				maegi(model, "Imaegi", ev, ev.i, C.imaegi)
 			end
 		end
+		RoofSplit.mark(model, if name == "Lower" then "lower" else "upper", Split) -- 겹은 부재 이름으로 (Shared.RoofSplit)
 	end
 	-- 선자연: 모서리마다 하층 7+7, 상층 12+11 (추녀와 겹치기 전까지 S4 011·012 간격으로 센 결과, 선자연_001 길이가 S4 177·178과 같음)
 	assert(count.seonja.Lower == 56 and count.seonja.Upper == 92, `선자연 수 하층 {count.seonja.Lower}·상층 {count.seonja.Upper}`)

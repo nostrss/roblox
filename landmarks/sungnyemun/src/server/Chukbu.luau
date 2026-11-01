@@ -7,6 +7,8 @@ local Units = require(ReplicatedStorage.Core.Units)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local K = require(ReplicatedStorage.Shared.Chukbu)
 local setup = require(script.Parent.Member)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
 
 local s = Units.studs
 local L = D.level
@@ -33,11 +35,14 @@ return function()
 	end
 	local model = Instance.new("Model")
 	model.Name = "Chukbu"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 
-	local function part(name: string, cf: CFrame, size: Vector3, cylinder: boolean?)
+	-- story: 지붕 분해 층 (고주·귀고주는 상층, Shared.RoofSplit 머리말)
+	local function part(story: RoofSplit.Story, name: string, cf: CFrame, size: Vector3, cylinder: boolean?)
 		local p = Instance.new("Part")
 		p.Name = name
 		setup(p, true) -- 기둥 등 축부는 지금처럼 부딪힌다
+		RoofSplit.mark(p, story, Split)
 		p.Size = Vector3.new(s(size.X), s(size.Y), s(size.Z))
 		p.CFrame = cf
 		if cylinder then
@@ -46,18 +51,18 @@ return function()
 		p.Parent = model
 	end
 	-- 세로 원기둥: (x, z)에 y0~y1 (레벨)
-	local function column(name: string, x: number, z: number, y0: number, y1: number, dia: number)
-		part(name, CFrame.new(s(x), s((y(y0) + y(y1)) / 2), s(z)) * CFrame.Angles(0, 0, math.pi / 2), Vector3.new(y1 - y0, dia, dia), true)
+	local function column(story: RoofSplit.Story, name: string, x: number, z: number, y0: number, y1: number, dia: number)
+		part(story, name, CFrame.new(s(x), s((y(y0) + y(y1)) / 2), s(z)) * CFrame.Angles(0, 0, math.pi / 2), Vector3.new(y1 - y0, dia, dia), true)
 	end
 	-- 수평 부재: a→b (XZ 평면, m) 사이, 단면 w×h, 밑면 레벨 bottom. round면 지름 w 원형
-	local function beam(name: string, a: Vector2, b: Vector2, bottom: number, w: number, h: number, round: boolean?)
+	local function beam(story: RoofSplit.Story, name: string, a: Vector2, b: Vector2, bottom: number, w: number, h: number, round: boolean?)
 		local mid, len = (a + b) / 2, (b - a).Magnitude
 		local yc = s(y(bottom) + h / 2)
 		local cf = CFrame.lookAt(Vector3.new(s(mid.X), yc, s(mid.Y)), Vector3.new(s(b.X), yc, s(b.Y)))
 		if round then
-			part(name, cf * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(len, w, w), true)
+			part(story, name, cf * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(len, w, w), true)
 		else
-			part(name, cf, Vector3.new(w, h, len))
+			part(story, name, cf, Vector3.new(w, h, len))
 		end
 	end
 
@@ -71,9 +76,9 @@ return function()
 		for j, z in zs do
 			if i == 1 or i == #xs or j == 1 or j == #zs then
 				local corner = (i == 1 or i == #xs) and (j == 1 or j == #zs)
-				column(corner and "Uju" or "Pyeongju", x, z, L.plinthTop, L.lowerColumnTop, C.lowerDia)
+				column("lower", corner and "Uju" or "Pyeongju", x, z, L.plinthTop, L.lowerColumnTop, C.lowerDia)
 			else
-				column("Goju", x, z, L.plinthTop, L.plinthTop + C.highLength, C.highDia)
+				column("upper", "Goju", x, z, L.plinthTop, L.plinthTop + C.highLength, C.highDia)
 			end
 		end
 	end
@@ -81,9 +86,9 @@ return function()
 		for j, z in uz do
 			local edgeX, edgeZ = i == 1 or i == #ux, j == 1 or j == #uz
 			if edgeX and edgeZ then
-				column("GwiGoju", x, z, L.upperColumnTop - C.cornerHighLength, L.upperColumnTop, C.cornerHighDia)
+				column("upper", "GwiGoju", x, z, L.upperColumnTop - C.cornerHighLength, L.upperColumnTop, C.cornerHighDia)
 			elseif edgeX or edgeZ then
-				column("UpperPyeongju", x, z, L.upperColumnTop - C.upperLength, L.upperColumnTop, C.upperDia)
+				column("upper", "UpperPyeongju", x, z, L.upperColumnTop - C.upperLength, L.upperColumnTop, C.upperDia)
 			end
 		end
 	end
@@ -104,19 +109,23 @@ return function()
 	-- 창방: 기둥 사이, 윗면 = 기둥 상
 	local lc, uc = K.lowerChangbang, K.upperChangbang
 	ring(xs, zs, function(a, b)
-		beam("LowerChangbang", a, b, L.lowerColumnTop - lc.height, lc.width, lc.height)
+		beam("lower", "LowerChangbang", a, b, L.lowerColumnTop - lc.height, lc.width, lc.height)
 	end)
 	ring(ux, uz, function(a, b)
-		beam("UpperChangbang", a, b, L.upperColumnTop - uc.height, uc.width, uc.height)
+		beam("upper", "UpperChangbang", a, b, L.upperColumnTop - uc.height, uc.width, uc.height)
 	end)
 
 	-- 평방: 기둥열을 따라 모서리까지 이어서 (모서리에서 평방 폭 절반만큼 더)
 	local pb = K.pyeongbang
-	for _, r in { { lx, lz, L.lowerColumnTop }, { px, pz, L.upperColumnTop } } do
-		local hx, base = r[1] + pb.width / 2, r[3]
+	local pbRows: { { hx: number, hz: number, base: number, story: RoofSplit.Story } } = {
+		{ hx = lx, hz = lz, base = L.lowerColumnTop, story = "lower" },
+		{ hx = px, hz = pz, base = L.upperColumnTop, story = "upper" },
+	}
+	for _, r in pbRows do
+		local hx = r.hx + pb.width / 2
 		for _, sgn in { -1, 1 } do
-			beam("Pyeongbang", Vector2.new(-hx, sgn * r[2]), Vector2.new(hx, sgn * r[2]), base, pb.width, pb.height)
-			beam("Pyeongbang", Vector2.new(sgn * r[1], -r[2] + pb.width / 2), Vector2.new(sgn * r[1], r[2] - pb.width / 2), base, pb.width, pb.height)
+			beam(r.story, "Pyeongbang", Vector2.new(-hx, sgn * r.hz), Vector2.new(hx, sgn * r.hz), r.base, pb.width, pb.height)
+			beam(r.story, "Pyeongbang", Vector2.new(sgn * r.hx, -r.hz + pb.width / 2), Vector2.new(sgn * r.hx, r.hz - pb.width / 2), r.base, pb.width, pb.height)
 		end
 	end
 
@@ -125,12 +134,12 @@ return function()
 	local beamBottom = L.lowerColumnTop + D.lowerPyeongbangHeight + bm.base
 	for i = 2, #xs - 1 do
 		for _, sgn in { -1, 1 } do
-			beam("Daebo", Vector2.new(xs[i], 0), Vector2.new(xs[i], sgn * bm.length), beamBottom, bm.width, bm.height)
+			beam("lower", "Daebo", Vector2.new(xs[i], 0), Vector2.new(xs[i], sgn * bm.length), beamBottom, bm.width, bm.height)
 		end
 	end
 	for _, sgn in { -1, 1 } do
 		local from = sgn * xs[#xs - 1]
-		beam("Chungryang", Vector2.new(from, 0), Vector2.new(from + sgn * bm.length, 0), beamBottom, bm.width, bm.height)
+		beam("lower", "Chungryang", Vector2.new(from, 0), Vector2.new(from + sgn * bm.length, 0), beamBottom, bm.width, bm.height)
 	end
 
 	-- 상층 대보(앞뒤)·충량(양옆): 고주 줄에서 바깥으로, 상층 주상포 사제공 자리를 지난다
@@ -138,12 +147,12 @@ return function()
 	local upperBeamBottom = L.upperColumnTop + D.upperPyeongbangHeight + ub.base
 	for i = 2, #ux - 1 do
 		for _, sgn in { -1, 1 } do
-			beam("UpperDaebo", Vector2.new(ux[i], 0), Vector2.new(ux[i], sgn * ub.length), upperBeamBottom, ub.width, ub.height)
+			beam("upper", "UpperDaebo", Vector2.new(ux[i], 0), Vector2.new(ux[i], sgn * ub.length), upperBeamBottom, ub.width, ub.height)
 		end
 	end
 	for _, sgn in { -1, 1 } do
 		local from = sgn * xs[#xs - 1]
-		beam("UpperChungryang", Vector2.new(from, 0), Vector2.new(from + sgn * ub.length, 0), upperBeamBottom, ub.height, ub.height) -- 충량 462×462 (S4 095)
+		beam("upper", "UpperChungryang", Vector2.new(from, 0), Vector2.new(from + sgn * ub.length, 0), upperBeamBottom, ub.height, ub.height) -- 충량 462×462 (S4 095)
 	end
 
 	-- 하층 외목도리·장여(외2출목, 모서리에서 만남)와 내목도리(내2출목)
@@ -157,19 +166,19 @@ return function()
 	end
 	rect(lx + od.outset, lz + od.outset, function(a, b)
 		local d = (b - a).Unit * od.dia / 2 -- 모서리에서 지름 절반 더 내밀어 왕지처럼 겹치게
-		beam("LowerOuterDori", a - d, b + d, doriBottom, od.dia, od.dia, true)
-		beam("LowerOuterJangyeo", a, b, doriBottom - oj.height, oj.width, oj.height)
+		beam("lower", "LowerOuterDori", a - d, b + d, doriBottom, od.dia, od.dia, true)
+		beam("lower", "LowerOuterJangyeo", a, b, doriBottom - oj.height, oj.width, oj.height)
 	end)
 	rect(lx - id.inset, lz - id.inset, function(a, b)
-		beam("LowerInnerDori", a, b, id.top - id.dia, id.dia, id.dia, true)
+		beam("lower", "LowerInnerDori", a, b, id.top - id.dia, id.dia, id.dia, true)
 	end)
 
 	-- 상층 외목도리·장여(외3출목). 윗면 = S4 021 2F_OUTSIDE_DORI_UPPER
 	local uod, uoj = K.upperOuterDori, K.upperOuterJangyeo
 	rect(px + uod.outset, pz + uod.outset, function(a, b)
 		local d = (b - a).Unit * uod.dia / 2
-		beam("UpperOuterDori", a - d, b + d, L.upperEave, uod.dia, uod.dia, true)
-		beam("UpperOuterJangyeo", a, b, L.upperEave - uoj.height, uoj.width, uoj.height)
+		beam("upper", "UpperOuterDori", a - d, b + d, L.upperEave, uod.dia, uod.dia, true)
+		beam("upper", "UpperOuterJangyeo", a, b, L.upperEave - uoj.height, uoj.width, uoj.height)
 	end)
 
 	-- 상층 내목도리·중도리(둘레)와 종도리(용마루 밑 한 줄). ponytail: 받치는 종보·대공·동자주는 아직
@@ -177,11 +186,11 @@ return function()
 		local k = d[2]
 		rect(px - k.inset, pz - k.inset, function(a, b)
 			local e = (b - a).Unit * k.dia / 2
-			beam(d[1], a - e, b + e, k.top - k.dia, k.dia, k.dia, true)
+			beam("upper", d[1], a - e, b + e, k.top - k.dia, k.dia, k.dia, true)
 		end)
 	end
 	local jd = K.jongdori
-	beam("Jongdori", Vector2.new(-jd.halfLength, 0), Vector2.new(jd.halfLength, 0), jd.top - jd.dia, jd.dia, jd.dia, true)
+	beam("upper", "Jongdori", Vector2.new(-jd.halfLength, 0), Vector2.new(jd.halfLength, 0), jd.top - jd.dia, jd.dia, jd.dia, true)
 
 	model.Parent = workspace
 end

@@ -7,6 +7,8 @@ local Units = require(ReplicatedStorage.Core.Units)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local H = require(ReplicatedStorage.Shared.Hyeonpan)
 local setup = require(script.Parent.Member)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
 
 local S = Units.studs(1)
 
@@ -16,6 +18,7 @@ return function()
 	end
 	local model = Instance.new("Model")
 	model.Name = "Hyeonpan"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 	local t = math.rad(H.tiltDeg)
 	local up = Vector3.new(0, math.cos(t), math.sin(t)) -- 위가 앞(+Z)으로 숙는다
 	local back = Vector3.new(0, math.sin(t), -math.cos(t)) -- 판 뒤쪽 (= 로컬 +Z)
@@ -72,5 +75,6 @@ return function()
 		local x = s * (hb - H.leg.inset)
 		block("Leg", C.green, x - H.leg.width / 2, x + H.leg.width / 2, 0, H.legs, 0, H.depth * 0.8)
 	end
+	RoofSplit.mark(model, "upper", Split, "gidung") -- 상층에 걸린 현판은 지붕 분해 때 상층 기둥과 같이 떠오른다
 	model.Parent = workspace
 end

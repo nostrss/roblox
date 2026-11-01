@@ -10,6 +10,8 @@ local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local G = require(ReplicatedStorage.Shared.Gongpo)
 local setup = require(script.Parent.Member)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
 
 local s = Units.studs
 local GWIHANDAE_THICKNESS = 0.151 -- S3 p.283 귀한대 초제공 151×224
@@ -181,6 +183,9 @@ return function()
 				setup(p)
 			end
 		end
+		(saved :: Model).ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
+		RoofSplit.mark(saved:FindFirstChild("Lower") :: Instance, "lower", Split, "gongpo")
+		RoofSplit.mark(saved:FindFirstChild("Upper") :: Instance, "upper", Split, "gongpo")
 		return
 	end
 	local folder = CollectionService:GetTagged(Tags.MEMBER_MESHES)[1]
@@ -192,6 +197,7 @@ return function()
 	local L = D.level
 	local root = Instance.new("Model")
 	root.Name = "Gongpo"
+	root.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 
 	local lower = Instance.new("Model")
 	lower.Name = "Lower"
@@ -206,6 +212,8 @@ return function()
 	n = floor(G.upper, upper, L.upperColumnTop - L.ground + D.upperPyeongbangHeight, D.upperBays, D.upperSideBays, D.upperIntercolumnar)
 	-- S4 012: 상층 주간포 24 (정면 1·2·4·2·1, 측면 1·1) + 주상포 10 + 귀포 4
 	assert(n.jugan == 24 and n.jusang == 10 and n.gwi == 4, `상층 공포 수 {n.jugan}/{n.jusang}/{n.gwi}`)
+	RoofSplit.mark(lower, "lower", Split, "gongpo")
+	RoofSplit.mark(upper, "upper", Split, "gongpo")
 
 	root.Parent = workspace
 end

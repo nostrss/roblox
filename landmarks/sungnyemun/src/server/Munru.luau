@@ -9,6 +9,8 @@ local D = require(ReplicatedStorage.Shared.Dimensions)
 local K = require(ReplicatedStorage.Shared.Chukbu)
 local M = require(ReplicatedStorage.Shared.Munru)
 local setup = require(script.Parent.Member)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
 
 local S = Units.studs(1)
 local L = D.level
@@ -289,15 +291,20 @@ local function walls()
 	local W = M.wall
 	local hi, mi, ms, ch = W.haInbang, W.munInbang, W.munseon, W.chang
 	local bandTop, bandBottom = mi.bottom, hi.bottom + hi.height -- 판창 자리 (두 인방 사이)
+	-- 상층 벽은 지붕 분해 때 상층 기둥과 같이 떠오른다 (상층 기둥 겹). 하층 하인방은 그대로
+	local function up(p: BasePart): BasePart
+		RoofSplit.mark(p, "upper", Split, "gidung")
+		return p
+	end
 	ring(ux, uz, function(a, b, inward)
 		local d = (b - a).Unit
 		local r = K.column.upperDia / 2
 		local a1, b1 = a + d * r, b - d * r -- 기둥 면 사이
-		flat("GwiteulInbang", a1, b1, hi.bottom - W.gwiteulInbang.height, hi.bottom, W.gwiteulInbang.width)
-		flat("HaInbang", a1, b1, hi.bottom, bandBottom, hi.width)
-		flat("MunInbang", a1, b1, mi.bottom, mi.bottom + mi.height, mi.width)
-		flat("Munseon", a1, a1 + d * ms.width, bandBottom, bandTop, ms.depth)
-		flat("Munseon", b1 - d * ms.width, b1, bandBottom, bandTop, ms.depth)
+		up(flat("GwiteulInbang", a1, b1, hi.bottom - W.gwiteulInbang.height, hi.bottom, W.gwiteulInbang.width))
+		up(flat("HaInbang", a1, b1, hi.bottom, bandBottom, hi.width))
+		up(flat("MunInbang", a1, b1, mi.bottom, mi.bottom + mi.height, mi.width))
+		up(flat("Munseon", a1, a1 + d * ms.width, bandBottom, bandTop, ms.depth))
+		up(flat("Munseon", b1 - d * ms.width, b1, bandBottom, bandTop, ms.depth))
 		-- 판창: 문선 사이를 같은 폭으로 나눈 닫힌 널창, 인방 안쪽 면에 붙인다
 		local a2, b2 = a1 + d * ms.width, b1 - d * ms.width
 		local len = (b2 - a2).Magnitude
@@ -306,11 +313,11 @@ local function walls()
 		local mid = (bandTop + bandBottom) / 2
 		for k = 1, n do
 			local p0, p1 = a2 + d * ((k - 1) * len / n + 0.003), a2 + d * (k * len / n - 0.003)
-			flat("Panchang", p0 + off, p1 + off, mid - ch.height / 2, mid + ch.height / 2, ch.thickness)
+			up(flat("Panchang", p0 + off, p1 + off, mid - ch.height / 2, mid + ch.height / 2, ch.thickness))
 		end
 		-- 안쪽 면을 평평하게 막는 보이지 않는 벽. 인방·판창 턱을 사다리로 알고 기어올라 넘어가지 않게 (공포 위까지)
 		local g = inward * (hi.width / 2 + ch.thickness + 0.03)
-		flat("WallGuard", a1 + g, b1 + g, U, L.upperColumnTop + 1.5, 0.06).Transparency = 1
+		up(flat("WallGuard", a1 + g, b1 + g, U, L.upperColumnTop + 1.5, 0.06)).Transparency = 1
 	end)
 	local lh = W.lowerHaInbang
 	ring(xs, zs, function(a, b, _, i)
@@ -329,6 +336,7 @@ return function()
 	end
 	model = Instance.new("Model")
 	model.Name = "Munru"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 	lowerFloor()
 	upperFloor()
 	stair()

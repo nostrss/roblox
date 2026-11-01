@@ -11,6 +11,8 @@ local D = require(ReplicatedStorage.Shared.Dimensions)
 local J = require(ReplicatedStorage.Shared.Jibung)
 local M = require(ReplicatedStorage.Shared.JibungMeshes)
 local setup = require(script.Parent.Member)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
 
 local S = Units.studs(1)
 local Q = { { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } } -- 동남 기준 점을 네 귀로 (x, z 부호)
@@ -41,11 +43,18 @@ local function half(bays: { number }): number
 	return t / 2
 end
 
+-- 지금 짓는 층 (지붕 분해 SplitStory). 층마다 도는 곳에서 바꾼다
+local story: RoofSplit.Story = "lower"
+local function storyOf(name: string): RoofSplit.Story -- "LowerJibungFront" 같은 이름의 앞머리로
+	return if string.sub(name, 1, 5) == "Lower" then "lower" else "upper"
+end
+
 local function part(parent: Instance, name: string, cf: CFrame, size: Vector3, shape: Enum.PartType?): Part
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Shape = shape or Enum.PartType.Block
 	setup(p) -- 재질·색은 이름으로 Shared.Palette
+	RoofSplit.mark(p, story, Split)
 	p.Size = size
 	p.CFrame = cf
 	p.Parent = parent
@@ -97,6 +106,7 @@ local function deco(root: Model)
 	local su, am = K.maksae.su, K.maksae.am
 	for name, b in M :: { [string]: any } do
 		local n0 = if string.find(name, "Front") then Vector3.zAxis else Vector3.xAxis
+		story = storyOf(name)
 		for _, turn in { 1, -1 } do
 			local n = n0 * turn
 			local t = Vector3.yAxis:Cross(n)
@@ -116,6 +126,7 @@ local function deco(root: Model)
 	-- 추녀마루: 밑면 = 지붕 추녀마루 선(JibungMeshes …Front.hip), 윗면 = top 표. 표의 x 자리도 마디로 넣어 단(용두)이 살게 한다
 	for _, layer in { "Lower", "Upper" } do
 		local L = K[string.lower(layer)]
+		story = storyOf(layer)
 		local hip = (M :: any)[layer .. "JibungFront"].hip
 		local xs = {}
 		for _, h in hip do
@@ -152,6 +163,7 @@ local function deco(root: Model)
 
 	-- 용마루: 곡 = 끝이 올라가는 2차 곡선. 밑면 = 지붕 꼭대기(상층 추녀마루 선 첫 점)
 	local R = K.ridge
+	story = "upper"
 	local roofTop = M.UpperJibungFront.hip[1][2]
 	local pts = {}
 	for i = -8, 8 do
@@ -167,6 +179,7 @@ local function deco(root: Model)
 
 	-- 연마루: 하층 지붕 위 끝 네 변. 띠 안쪽 면 = 상층 기둥열 + inner
 	local Y = K.lower.yeonmaru
+	story = "lower"
 	local hx, hz = half(D.upperBays) + Y.inner, half(D.upperSideBays) + Y.inner
 	local h = Y.top - Y.bottom
 	for _, s in { 1, -1 } do
@@ -180,6 +193,7 @@ local function deco(root: Model)
 	local cheoma = workspace:FindFirstChild("Cheoma")
 	for _, layer in { "Lower", "Upper" } do
 		local T = K[string.lower(layer)].tosu
+		story = storyOf(layer)
 		local model = cheoma and cheoma:FindFirstChild(layer)
 		for _, p in if model then model:GetDescendants() else {} do
 			if p:IsA("BasePart") and p.Name == "Sarae" then
@@ -201,6 +215,7 @@ return function()
 	local folder = CollectionService:GetTagged(Tags.MEMBER_MESHES)[1]
 	local root = Instance.new("Model")
 	root.Name = "Jibung"
+	root.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- 지붕 분해가 클라이언트에서 부재 전체를 옮기므로 스트리밍으로 빠지지 않게
 	for name, b in M :: { [string]: any } do
 		local src = folder and folder:FindFirstChild(name)
 		if not (src and src:IsA("MeshPart")) then
@@ -212,6 +227,7 @@ return function()
 			local p = (src :: MeshPart):Clone()
 			p.Name = name
 			setup(p)
+			RoofSplit.mark(p, storyOf(name), Split)
 			-- 크기는 임포트된 그대로 둔다 (Size를 다시 넣으면 임포터 경계 상자와 조금만 달라도 메시 전체가 늘어나 추녀마루가 어긋난다)
 			p.CFrame = CFrame.Angles(0, turn, 0) * cf
 			p.Parent = root

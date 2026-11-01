@@ -65,7 +65,7 @@ local byName: { [string]: string } = {
 	Dideumdol = "myeonseok", Somaetdol = "myeonseok", Panseok = "panseok",
 	YeojangJeon = "jeondol", Okgaejeon = "giwa", -- 여장 전돌·옥개전 (S7 p.198 옥개전은 기와처럼 구운 것)
 	Seongmun = "seokganju", Dunte = "seokganju", Cheoryeop = "soe", Banjaneol = "noerok",
-	PavilionBase = "gidan",
+	PavilionBase = "gidan", Pyoseok = "gidan", -- 지붕 분해 표식 돌
 	SeongBody = "seongdol", SeongBack = "jandi", Yeojang = "yeojangseok", Miseok = "yeojangseok", Okgae = "okgaeseok",
 	Masato = "masato", Bakseok = "bakseok", Jandi = "jandi", Bodo = "bodo", Asphalt = "asphalt", Ongbyeok = "ongbyeok", Hoengdan = "hoengdan",
 	ChaseonWhite = "hoengdan", ChaseonYellow = "chaseonYellow", ChaseonBlue = "chaseonBlue",

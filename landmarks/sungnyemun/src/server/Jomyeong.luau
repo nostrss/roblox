@@ -11,6 +11,8 @@ local Units = require(ReplicatedStorage.Core.Units)
 local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
 local Plaza = require(ReplicatedStorage.Shared.Plaza)
+local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
+local Split = require(ReplicatedStorage.Shared.RoofSplit)
 
 local S = Units.studs(1)
 local L = D.level
@@ -151,6 +153,9 @@ return function()
 			light.Angle = EAVE.angle
 			light.Parent = p
 			CollectionService:AddTag(p, Tags.NIGHT_LIGHT)
+			if e == EAVES[2] then
+				RoofSplit.mark(p, "upper", Split, "gidung") -- 상층 처마 밑 조명판은 지붕 분해 때 상층과 같이 떠오른다
+			end
 		end
 	end
 
