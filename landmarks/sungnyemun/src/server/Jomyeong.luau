@@ -1,5 +1,6 @@
 --!strict
 -- 숭례문 야간 조명 기구: 육축·문루 투광등(SpotLight), 처마 밑 SurfaceLight, 광장 가로등(PointLight). 광원 14개 (모바일).
+-- 그리고 홍예 통로 빛 둘: 낮 조명(Tags.DAY_LIGHT)과 야간 조명. 한 번에 하나만 켜진다.
 -- 첫 자리는 S15 사진(눈으로 참고)을 보고 대충 잡았다: 육축 면은 바닥에서 올려 비추고, 처마 밑 공포대가 밝고, 지붕 기와는 어둡다.
 -- 자리·방향·밝기는 Studio에서 다듬는다 — 켜고 끄기는 태그(Tags.NIGHT_LIGHT)로 하므로 옮기거나 더한 기구도 태그만 붙이면 된다.
 -- 여기 적은 Brightness가 켜진(밤) 밝기다. 클라이언트(core TimeOfDay)가 낮에는 0으로 내린다.
@@ -10,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Units = require(ReplicatedStorage.Core.Units)
 local Tags = require(ReplicatedStorage.Core.Tags)
 local D = require(ReplicatedStorage.Shared.Dimensions)
+local Y = require(ReplicatedStorage.Shared.Yukchuk)
 local Plaza = require(ReplicatedStorage.Shared.Plaza)
 local RoofSplit = require(ReplicatedStorage.Core.RoofSplit)
 local Split = require(ReplicatedStorage.Shared.RoofSplit)
@@ -23,16 +25,17 @@ end
 local WARM = Color3.fromRGB(255, 196, 132) -- 근사: S15 사진의 석축·처마 불빛 (나트륨등 같은 주황 백색)
 local LAMP = Color3.fromRGB(230, 176, 112) -- Neon 등알이 Bloom에 하얗게 날리지 않게 낮춘 색
 
--- 투광등 { 기구 자리 (x, y, z), 비추는 점, 밝기 } — 육축 앞뒤 면을 광장 바닥에서 올려 비추고, 육축 윗면 여장 안쪽에서 하층 처마 밑을 비춘다
+-- 투광등 { 기구 자리 (x, y, z), 비추는 점, 밝기, Shadows } — 육축 앞뒤 면을 광장 바닥에서 올려 비추고, 육축 윗면 여장 안쪽에서 하층 처마 밑을 비춘다
+-- 바닥 투광등은 Shadows를 켠다: 끄면 빛이 벽을 뚫고 홍예 통로로 새 벽과 반자가 날린다 (Play에서 확인)
 local front, back = D.wall.south, D.wall.north
 local LIFT = 0.9 -- 기구를 바닥에서 띄우는 높이. 복셀 조명(Technology Voxel)은 바닥 판에 묻힌 광원을 가려 버린다 (Studio에서 확인)
 local SPOTS = {
-	{ Vector3.new(-6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(-7, 5, front), 8 },
-	{ Vector3.new(6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(7, 5, front), 8 },
-	{ Vector3.new(-6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(-7, 5, back), 8 },
-	{ Vector3.new(6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(7, 5, back), 8 },
-	{ Vector3.new(-7, y(0) + LIFT, front - 0.9), Vector3.new(-7, y(L.lowerEave), front + 1), 2 },
-	{ Vector3.new(7, y(0) + LIFT, front - 0.9), Vector3.new(7, y(L.lowerEave), front + 1), 2 },
+	{ Vector3.new(-6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(-7, 5, front), 8, true },
+	{ Vector3.new(6.5, Plaza.floor(front + 5) + LIFT, front + 5), Vector3.new(7, 5, front), 8, true },
+	{ Vector3.new(-6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(-7, 5, back), 8, true },
+	{ Vector3.new(6.5, Plaza.floor(back - 5) + LIFT, back - 5), Vector3.new(7, 5, back), 8, true },
+	{ Vector3.new(-7, y(0) + LIFT, front - 0.9), Vector3.new(-7, y(L.lowerEave), front + 1), 2, false },
+	{ Vector3.new(7, y(0) + LIFT, front - 0.9), Vector3.new(7, y(L.lowerEave), front + 1), 2, false },
 }
 local SPOT = { range = 60, angle = 100 } -- range 60 스터드(약 20 m)가 로블록스 최대
 
@@ -99,6 +102,14 @@ for _, e in EAVES do
 end
 local POLE = 4 -- 근사: 가로등 높이(m)
 
+-- 홍예 통로 빛: 해가 들지 않는 반자를 사진(S27)만큼 보이게 비춘다. 근사: 값은 Play에서 사진과 눈으로 맞췄다.
+-- PointLight라 벽에 빛 경계가 없고 반자 남북이 고르다. Shadows는 반자 위 공포로 새지 않게 켠다 (Play에서 확인)
+local TONGNO = {
+	below = 2, -- 반자 아래 m
+	range = 18, -- 닿는 거리(스터드). 통로 바닥까지 닿고, 북측 홍예 밖 바닥에 조금 샌다
+	lights = { { Tags.DAY_LIGHT, Color3.new(1, 1, 1), 2 }, { Tags.NIGHT_LIGHT, WARM, 1.2 } }, -- { 태그, 색, 밝기 }
+}
+
 local model: Model
 
 local function part(name: string, size: Vector3, cf: CFrame, color: Color3): Part
@@ -137,6 +148,7 @@ return function()
 		light.Brightness = s[3] :: number
 		light.Range = SPOT.range
 		light.Angle = SPOT.angle
+		light.Shadows = s[4] :: boolean
 		light.Parent = p
 		CollectionService:AddTag(p, Tags.NIGHT_LIGHT)
 	end
@@ -173,6 +185,21 @@ return function()
 		light.Range = 40
 		light.Parent = globe
 		CollectionService:AddTag(globe, Tags.NIGHT_LIGHT)
+	end
+
+	-- 통로 가운데
+	local doorZ = D.wall.south - Y.arches.south.length
+	local tongno = Vector3.new(0, y(Y.passage.ceiling) - TONGNO.below, doorZ - Y.passage.banja.length / 2)
+	for _, t in TONGNO.lights do
+		local p = part("TongnoJomyeong", Vector3.new(0.05, 0.05, 0.05), CFrame.new(tongno * S), dark)
+		p.Transparency = 1
+		local light = Instance.new("PointLight")
+		light.Color = t[2] :: Color3
+		light.Brightness = t[3] :: number
+		light.Range = TONGNO.range
+		light.Shadows = true
+		light.Parent = p
+		CollectionService:AddTag(p, t[1] :: string)
 	end
 
 	model.Parent = workspace
