@@ -22,13 +22,12 @@ local function world(points: { Vector3 }): { Vector3 }
 end
 
 -- 차 종류. 앞 = −Z, 바닥 = 0. 크기: 시내버스 약 11 × 2.5 × 3.2 m, 승용차·택시 약 4.7 × 1.85 × 1.5 m
--- 메시는 Studio AI 메시 생성으로 만들었다 (S46). 특정 차종이 아니다. 메시를 못 받으면 상자로 보인다
+-- 메시는 Studio AI 메시 생성으로 만들었다 (S46). 앞이 −Z로 나오므로 돌리지 않는다 (Studio에서 5종 확인). 특정 차종이 아니다. 메시를 못 받으면 상자로 보인다
 local ENGINE = 9112735838 -- S20
-local YAW = 180 -- 생성 메시 앞을 차 앞(−Z)으로 돌리는 각 (Play에서 눈으로 맞췄다)
 
 local function bus(meshId: number, texture: number, color: Color3): Traffic.Kind
 	return {
-		boxes = { { size = Vector3.new(2.5, 3.2, 11), at = Vector3.new(0, 1.6, 0), mesh = meshId, texture = texture, yaw = YAW } },
+		boxes = { { size = Vector3.new(2.5, 3.2, 11), at = Vector3.new(0, 1.6, 0), mesh = meshId, texture = texture } },
 		colors = { color },
 		lamp = Vector3.new(0.9, 0.75, 5.52),
 		shadow = true,
@@ -39,7 +38,7 @@ end
 
 local function car(meshId: number, texture: number, color: Color3, height: number): Traffic.Kind
 	return {
-		boxes = { { size = Vector3.new(1.85, height, 4.7), at = Vector3.new(0, height / 2, 0), mesh = meshId, texture = texture, yaw = YAW } },
+		boxes = { { size = Vector3.new(1.85, height, 4.7), at = Vector3.new(0, height / 2, 0), mesh = meshId, texture = texture } },
 		colors = { color },
 		lamp = Vector3.new(0.65, 0.7, 2.36),
 		engine = { id = ENGINE, volume = 0.45, speed = 1 },
