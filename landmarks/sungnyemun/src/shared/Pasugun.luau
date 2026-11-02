@@ -48,7 +48,9 @@ local M = {
 	armPurple = { 124968232742241, 125575726064405, 180 },
 	skirt = { 84995893448823, 119103880034870, 180 },
 	boot = { 94620698467497, 81450217428794, 180 },
-	woldo = { 119464657900617, 118060206453782, 180 },
+	woldoHead = { 124066811321553, 72243445607698, 180 }, -- 자루 없는 칼날과 금 물림쇠
+	nagak = { 101582088917154, 120202421355661, 0 }, -- 뾰족한 끝이 메시 +Y
+	hand = { 78808390872339, 130602473875533, 180 },
 }
 -- 메시를 받지 못했을 때 상자로 지을 때의 색
 local FALLBACK = hex("#6E6A72")
@@ -93,12 +95,27 @@ end
 export type Dress = {
 	torso: { number },
 	sleeve: Color3,
-	tintSleeve: boolean?, -- 팔 메시(보라)를 sleeve 색으로 칠한다. 다른 색 팔을 생성하면 모양이 제각각이라 메시 하나를 칠해 쓴다
+	grip: { armL: boolean?, armR: boolean? }?, -- 물건을 쥔 손. 손바닥과 손가락으로 조립한 주먹을 쓴다
+	gripAcross: boolean?, -- 쥔 물건이 가로다 (등채). 없으면 세로 (자루)
+	inner: number?, -- 속저고리 폭 (m). 옷이 좁으면 줄인다
 	hat: { Figures.Box },
 	skirt: boolean?, -- 앞자락 아래 치마
 	torsoHeight: number, -- 어깨(y 1.42)에서 앞자락 끝까지 (m)
 	torsoDepth: number,
 }
+
+-- 주먹: 물건이 손바닥 가운데를 지나고 손가락 네 개가 그 앞을 감싼다. 생성한 손 메시는 이 크기에서 펴진 손처럼 보였다
+local SKIN = hex("#E3AE94")
+local function fist(j: Joint, x: number, across: boolean?): { Figures.Box }
+	local out = { ball(j, 0.08, Vector3.new(x, HAND_Y, 0), SKIN) }
+	for i = 0, 3 do
+		local s = (i - 1.5) * 0.023
+		local c = if across then Vector3.new(x + s, HAND_Y, 0.034) else Vector3.new(x, HAND_Y + s, 0.034)
+		local half = if across then Vector3.new(0, 0.034, 0) else Vector3.new(0.034, 0, 0)
+		table.insert(out, bar(j, c - half, c + half, 0.026, SKIN))
+	end
+	return out
+end
 
 -- 몸 한 벌: 약 1.7 m (머리 꼭대기), 모자 포함 약 1.75 m. 조각마다 core Figures의 관절 하나를 따라 움직인다
 local function body(d: Dress): { Figures.Box }
@@ -108,24 +125,33 @@ local function body(d: Dress): { Figures.Box }
 		mesh("upper", d.torso, 0.6, d.torsoHeight, d.torsoDepth, 0, 1.42 - d.torsoHeight / 2, 0, true),
 		mesh("upper", M.head, 0.235, 0.345, 0.22, 0, 1.54, 0.01),
 	}
-	-- 모두 민소매 옷 + 팔 메시 (옷 메시에 소매가 있으면 팔을 들 때 소매가 이중으로 보였다)
+	-- 속저고리: 민소매 옷의 진동 구멍이 검게 뚫려 보이지 않게 안쪽을 소매 색으로 메운다
+	table.insert(b, slab("upper", Vector3.new(d.inner or 0.27, 0.26, 0.08), CFrame.new(0, 1.14, 0), d.sleeve))
+	-- 모두 민소매 옷 + 팔 메시 (옷 메시에 소매가 있으면 팔을 들 때 소매가 이중으로 보였다).
+	-- 팔 메시 하나를 sleeve 색으로 칠해 쓴다: 색마다 생성하면 모양이 제각각이고, 칠하면 메시의 손도 소매 색이 되므로
+	-- 팔을 줄여 끝이 토시 위에 오게 해 소매처럼 보이게 하고, 그 아래에 손 메시를 단다
 	for _, s in { { "armL", 1 }, { "armR", -1 } } do
 		local j, side = s[1] :: Joint, s[2] :: number
-		local arm = mesh(j, M.armPurple, 0.16, 0.58, 0.16, side * HAND_X, 0.98, 0)
-		if d.tintSleeve then
-			arm.tint, arm.color, arm.material = true, d.sleeve, METAL -- Fabric 무늬는 뜨개처럼 보였다
-			table.insert(b, rod(j, 0.04, 0.095, side * HAND_X, 0.795, 0, hex("#E8E4DA"))) -- 토시
-			table.insert(b, ball(j, 0.095, Vector3.new(side * HAND_X, HAND_Y - 0.015, 0), hex("#E0B090"))) -- 칠한 메시의 손을 덮는다
-		end
+		local arm = mesh(j, M.armPurple, 0.135, 0.5, 0.135, side * HAND_X, 1.03, 0)
+		arm.tint, arm.color, arm.material = true, d.sleeve, METAL -- Fabric 무늬는 뜨개처럼 보였다
 		table.insert(b, arm)
-		-- 어깨: 잘린 소매 끝을 덮는다. 윗부분은 옷 어깨에 묻힌다
-		local shoulder = ball(j, 0.14, Vector3.new(side * HAND_X, 1.26, 0), d.sleeve)
-		shoulder.material = if d.tintSleeve then METAL else Enum.Material.Fabric
-		table.insert(b, shoulder)
+		table.insert(b, rod(j, 0.04, 0.095, side * HAND_X, 0.795, 0, hex("#E8E4DA"))) -- 토시
+		local gripped = d.grip and (d.grip :: any)[j]
+		if gripped then
+			for _, f in fist(j, side * HAND_X, d.gripAcross) do
+				table.insert(b, f)
+			end
+		else
+			table.insert(b, mesh(j, M.hand, 0.1, 0.17, 0.08, side * HAND_X, HAND_Y - 0.02, 0))
+		end
+		-- 어깨: 팔 메시 윗단이 컵처럼 열려 있어 납작한 반구로 막는다 (공을 쓰면 옷 위로 튀어나왔다)
+		local cap = mesh(j, M.dome, 0.13, 0.035, 0.13, side * HAND_X, 1.272, 0)
+		cap.tint, cap.color, cap.material = true, d.sleeve, METAL
+		table.insert(b, cap)
 	end
 	if d.skirt then
 		local skirt = mesh("root", M.skirt, 0.44, 0.64, 0.38, 0, 0.53, 0)
-		skirt.tint, skirt.color, skirt.material = true, hex("#4A4678"), METAL -- 사진 치마 색. 메시 그림은 너무 밝은 파랑이다
+		skirt.tint, skirt.color, skirt.material = true, hex("#3D3A62"), METAL -- 사진 치마 색. 메시 그림은 너무 밝은 파랑이다
 		table.insert(b, skirt)
 	end
 	for _, h in d.hat do
@@ -179,7 +205,7 @@ end
 
 -- 호군 (sa02): 보라 소매 + 청 민소매 전복. 두 손으로 붉은 등채를 가로로 들고, 왼쪽 허리에 환도, 오른쪽에 황 수건
 local function hogun(): { Figures.Box }
-	local b = body({ torso = M.vestHogun, sleeve = hex("#3A2560"), hat = jeollip(), torsoHeight = 1.2, torsoDepth = 0.36 })
+	local b = body({ torso = M.vestHogun, inner = 0.36, sleeve = hex("#3E3360"), grip = { armL = true, armR = true }, gripAcross = true, hat = jeollip(), torsoHeight = 1.2, torsoDepth = 0.36 })
 	-- 등채: 오른팔에 붙인다. 왼팔은 grip·command에서 같은 만큼 움직여 손이 떨어지지 않는다
 	local r, frame = handAt("armR", "grip")
 	local l = handAt("armL", "grip")
@@ -219,22 +245,24 @@ local function pole(): { Figures.Box }
 	local h, frame = handAt("armR", "pole")
 	local up = Vector3.new(-0.08, 1, 0.02).Unit
 	local foot = h - up * (h.Y / up.Y)
-	local center = foot + up * (POLE_LENGTH / 2)
-	local cf = CFrame.lookAt(center, center + Vector3.new(0, 0, -1), up) * CFrame.Angles(0, math.pi, 0)
-	-- 메시 코등이는 전체 길이의 약 65% 높이다 (꼭짓점으로 잼). 그 아래 자루에 사진의 검은 감개와 금 띠를 두른다
 	local function along(a: number): Vector3
 		return foot + up * (POLE_LENGTH * a)
 	end
+	-- 칼날 머리는 전체의 약 1/5 (전에는 자루와 한 메시라 칼날이 사진보다 컸다)
+	local headLength = POLE_LENGTH * 0.21
+	local center = along(1) - up * (headLength / 2)
+	local cf = CFrame.lookAt(center, center + Vector3.new(0, 0, -1), up) * CFrame.Angles(0, math.pi, 0)
 	return {
-		{ joint = "armR", size = Vector3.new(0.27, POLE_LENGTH, 0.1), at = frame:Inverse() * cf, color = FALLBACK, mesh = M.woldo[1], texture = M.woldo[2] },
-		bar("armR", along(0.44), along(0.6), 0.078, hex("#1E1E22"), frame), -- 감개
-		bar("armR", along(0.6), along(0.625), 0.085, GOLD, frame, BRASS),
+		bar("armR", foot, along(0.8), 0.036, hex("#6B3A22"), frame), -- 자루
+		bar("armR", foot, along(0.03), 0.044, GOLD, frame, BRASS), -- 물미
+		bar("armR", along(0.5), along(0.79), 0.042, hex("#1E1E22"), frame), -- 감개
+		{ joint = "armR", size = Vector3.new(0.13, headLength, 0.04), at = frame:Inverse() * cf, color = FALLBACK, mesh = M.woldoHead[1], texture = M.woldoHead[2] },
 	}
 end
 
 -- 파수군 (sa03 / 홍 전복 sg05·sp04)
 local function jeongbyeong(torso: { number }, spear: boolean): { Figures.Box }
-	local b = body({ torso = torso, sleeve = hex("#3A2560"), hat = jeollip(), skirt = true, torsoHeight = 1.0, torsoDepth = 0.34 })
+	local b = body({ torso = torso, inner = 0.36, sleeve = hex("#3E3360"), grip = if spear then { armR = true } else nil, hat = jeollip(), skirt = true, torsoHeight = 1.0, torsoDepth = 0.34 })
 	if spear then
 		for _, p in pole() do
 			table.insert(b, p)
@@ -267,7 +295,7 @@ local function token(): { Figures.Box }
 	}
 end
 
--- 갓 (sp03): 검은 챙 넓은 모자에 짙은 갈색 띠
+-- 갓 (sp03): 전립과 같은 둥근 몸통에 짙은 갈색 띠. 평평한 원기둥 몸통은 서양 중절모처럼 보였고, 사용자가 전립 비율을 가장 자연스럽다고 골랐다
 local function gat(): { Figures.Box }
 	local out = wideHat(C.black, C.black)
 	table.insert(out, rod("upper", 0.02, CROWN + 0.008, 0, BRIM + 0.032, 0, hex("#3A2A1C")))
@@ -281,7 +309,7 @@ end
 
 -- 금루관 후보 (sp03·sp07, 역할 추정). 징은 왼손에 끈으로 늘어뜨려 세워 들고, 오른손 채로 친다
 local function geumrugwan(): { Figures.Box }
-	local b = body({ torso = M.robeGeumru, sleeve = hex("#23907F"), tintSleeve = true, hat = gat(), torsoHeight = 1.22, torsoDepth = 0.4 })
+	local b = body({ torso = M.robeGeumru, grip = { armL = true, armR = true }, sleeve = hex("#23907F"), hat = gat(), torsoHeight = 1.22, torsoDepth = 0.4 })
 	local l, frame = handAt("armL", "gong")
 	local center = l + Vector3.new(0.03, -0.21, 0.06)
 	local face = CFrame.new(center) * CFrame.Angles(0, math.pi / 2, 0) -- 원기둥 축(X)을 앞으로
@@ -312,9 +340,9 @@ local function samo(): { Figures.Box }
 	end
 	local out = { capPart(0.265, 0.12, BRIM, 0), capPart(0.19, 0.19, BRIM + 0.02, -0.035) }
 	for side = -1, 1, 2 do
-		-- 날개: 납작하게 누른 반구로 앞을 향한 타원 판을 만든다 (원기둥은 타원이 안 되고 둥근 판은 귀처럼 보였다)
-		local wing = mesh("upper", M.dome, 0.11, 0.01, 0.05, side * 0.135, BRIM + 0.105, -0.085)
-		wing.at = CFrame.new(side * 0.135, BRIM + 0.105, -0.085) * CFrame.Angles(math.pi / 2, 0, side * 0.15)
+		-- 날개: 납작하게 누른 반구로 옆으로 긴 타원 판을 만든다 (둥근 판은 귀처럼 보였다)
+		local wing = mesh("upper", M.dome, 0.15, 0.008, 0.042, side * 0.155, BRIM + 0.115, -0.085)
+		wing.at = CFrame.new(side * 0.155, BRIM + 0.115, -0.085) * CFrame.Angles(math.pi / 2, 0, 0)
 		wing.tint, wing.color = true, C.black
 		table.insert(out, wing)
 	end
@@ -322,7 +350,7 @@ local function samo(): { Figures.Box }
 end
 
 local function seonjeongwan(): { Figures.Box } -- 선전관 후보 (sp03, 역할 추정)
-	local b = body({ torso = M.robeSeonjeon, sleeve = hex("#1F3FA8"), tintSleeve = true, hat = samo(), torsoHeight = 1.25, torsoDepth = 0.3 })
+	local b = body({ torso = M.robeSeonjeon, grip = { armR = true }, sleeve = hex("#1F3FA8"), hat = samo(), torsoHeight = 1.25, torsoDepth = 0.3 })
 	for _, p in token() do
 		table.insert(b, p)
 	end
@@ -336,8 +364,8 @@ local function geumgun(): { Figures.Box } -- 금군: 복식 어긋남은 머리 
 	return b
 end
 
-local function player(instrument: { Figures.Box }): { Figures.Box } -- 나각수·나발수 후보 (mh22 도열, 악기 배정 추정)
-	local b = body({ torso = M.robePlayer, sleeve = hex("#D9B568"), tintSleeve = true, hat = hwangnip(), torsoHeight = 1.22, torsoDepth = 0.4 })
+local function player(instrument: { Figures.Box }, open: boolean?): { Figures.Box } -- 나각수·나발수 후보 (mh22 도열, 악기 배정 추정)
+	local b = body({ torso = M.robePlayer, grip = if open then nil else { armR = true }, sleeve = hex("#D9B568"), hat = hwangnip(), torsoHeight = 1.22, torsoDepth = 0.4 })
 	for _, i in instrument do
 		table.insert(b, i)
 	end
@@ -348,16 +376,12 @@ local MOUTH = Vector3.new(0, 1.465, 0.13)
 local function nagak(): { Figures.Box }
 	local h, frame = handAt("armR", "blow")
 	local dir = (h - MOUTH).Unit
-	local shell = hex("#D8B08C")
-	local function piece(a: number, z: number, width: number, color: Color3): Figures.Box
-		return bar("armR", MOUTH + dir * a, MOUTH + dir * z, width, color, frame)
-	end
+	local L = (h - MOUTH).Magnitude -- 넓은 끝이 손바닥에 닿는다 (대기 자세에서도 손에서 떨어지지 않게)
+	local center = MOUTH + dir * (L / 2)
+	-- 메시 +Y(뾰족한 끝)가 입을 본다
+	local cf = CFrame.lookAt(center, center + dir:Cross(Vector3.xAxis), -dir)
 	return {
-		piece(0, 0.12, 0.03, shell),
-		piece(0.1, 0.22, 0.07, shell),
-		piece(0.2, 0.36, 0.115, shell),
-		piece(0.27, 0.29, 0.12, hex("#A8744F")),
-		ball("armR", 0.12, MOUTH + dir * 0.36, shell, frame),
+		{ joint = "armR", size = Vector3.new(L * 0.43, L, L * 0.38), at = frame:Inverse() * cf, color = hex("#D8B08C"), mesh = M.nagak[1], texture = M.nagak[2] },
 	}
 end
 -- 나발: 입에서 손을 지나 앞으로 뻗는 긴 금속관. 끝이 나팔처럼 벌어진다
@@ -566,7 +590,7 @@ return function(T: { [string]: number }, LEN: { [string]: number }): Figures.Con
 		{ boxes = seonjeongwan(), keys = r2.keys },
 		{ boxes = geumgun(), keys = r3.keys },
 		{ boxes = geumrugwan(), keys = r4.keys, rest = "gong", carry = BOTH },
-		{ boxes = player(nagak()), keys = r5.keys, carry = { armR = true } },
+		{ boxes = player(nagak(), true), keys = r5.keys, rest = "nagakRest", carry = { armR = true } }, -- 불지 않을 때는 나각을 가슴 앞에 받쳐 든다
 		{ boxes = player(nabal()), keys = r6.keys, rest = "horn", carry = { armR = true } },
 		{ boxes = jeongbyeong(M.vestYellow, false), keys = r7.keys },
 		{ boxes = jeongbyeong(M.vestYellow, false), keys = r8.keys },
